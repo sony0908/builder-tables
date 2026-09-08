@@ -50,11 +50,15 @@ export async function generateArchive(
     files[
       'data/builder_tables/structure/' + structure.analysis.id + '.nbt'
     ] = structure.construction
-    files[
-      'data/builder_tables_generated/structure/preview/' +
-        structure.analysis.id +
-        '.nbt'
-    ] = structure.preview
+    structure.previewParts.forEach((part) => {
+      files[
+        'data/builder_tables_generated/structure/preview/' +
+          structure.analysis.id +
+          '/part_' +
+          part.index +
+          '.nbt'
+      ] = part.template
+    })
   })
 
   addControllerAssets(put, putJson, structures)

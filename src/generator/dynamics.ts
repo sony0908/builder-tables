@@ -1,3 +1,4 @@
+import { rotatedFillBounds, splitStructureRegions, type Rotation } from './geometry'
 import type { GeneratedStructure } from './nbt'
 import type { TextFileWriter } from './preview'
 
@@ -84,12 +85,37 @@ function buildDo(structure: GeneratedStructure) {
   ])
 }
 
+function relative(value: number) {
+  return value === 0 ? '~' : '~' + value
+}
+
+function clearRegion(rotation: Rotation, structure: GeneratedStructure) {
+  return splitStructureRegions(structure.analysis.size).map((region) => {
+    const { from, to } = rotatedFillBounds(region, rotation)
+
+    return (
+      'fill ' +
+      from.map(relative).join(' ') +
+      ' ' +
+      to.map(relative).join(' ') +
+      ' air replace'
+    )
+  })
+}
+
 function undo(structure: GeneratedStructure) {
-  const { id, name, price, size } = structure.analysis
-  const [width, height, depth] = size
-  const a = width - 1
-  const b = height - 1
-  const c = depth - 1
+  const { id, name, price } = structure.analysis
+  const rotations: Rotation[] = [0, 1, 2, 3]
+  const clears = rotations.flatMap((rotation) => {
+    const anchor = '@e[tag=bt_anchor_' + id + ',tag=bt_rot' + rotation + ']'
+    const atAnchor =
+      '@e[tag=bt_anchor_' + id + ',tag=bt_rot' + rotation + ',limit=1]'
+
+    return clearRegion(rotation, structure).map(
+      (fill) =>
+        'execute if entity ' + anchor + ' at ' + atAnchor + ' run ' + fill,
+    )
+  })
 
   return mcfunction([
     'function builder_tables_generated:controller_block/clear_preview',
@@ -100,50 +126,7 @@ function undo(structure: GeneratedStructure) {
         'No hay una construccion reciente de este plano para deshacer.',
         'red',
       ),
-    'execute if entity @e[tag=bt_anchor_' +
-      id +
-      ',tag=bt_rot0] at @e[tag=bt_anchor_' +
-      id +
-      ',tag=bt_rot0,limit=1] run fill ~ ~ ~ ~' +
-      a +
-      ' ~' +
-      b +
-      ' ~' +
-      c +
-      ' air replace',
-    'execute if entity @e[tag=bt_anchor_' +
-      id +
-      ',tag=bt_rot1] at @e[tag=bt_anchor_' +
-      id +
-      ',tag=bt_rot1,limit=1] run fill ~-' +
-      c +
-      ' ~ ~ ~ ~' +
-      b +
-      ' ~' +
-      a +
-      ' air replace',
-    'execute if entity @e[tag=bt_anchor_' +
-      id +
-      ',tag=bt_rot2] at @e[tag=bt_anchor_' +
-      id +
-      ',tag=bt_rot2,limit=1] run fill ~-' +
-      a +
-      ' ~ ~-' +
-      c +
-      ' ~ ~' +
-      b +
-      ' ~ air replace',
-    'execute if entity @e[tag=bt_anchor_' +
-      id +
-      ',tag=bt_rot3] at @e[tag=bt_anchor_' +
-      id +
-      ',tag=bt_rot3,limit=1] run fill ~ ~ ~-' +
-      a +
-      ' ~' +
-      c +
-      ' ~' +
-      b +
-      ' ~ air replace',
+    ...clears,
     'execute if entity @e[tag=bt_anchor_' +
       id +
       '] run give @s minecraft:emerald ' +

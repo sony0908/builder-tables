@@ -6,6 +6,7 @@ import type {
   ViewerPaletteEntry,
   WorkerStructureInput,
 } from './types'
+import { splitStructureRegions, type StructureSize } from './geometry'
 
 const AIR_BLOCKS = new Set([
   'minecraft:air',
@@ -18,18 +19,23 @@ const UNSUPPORTED_26_2 = new Set([
   'minecraft:dark_oak_wall_hanging_sign',
 ])
 
-const MAX_VOLUME = 32768
-
 export type BlockState = {
   name: string
   properties: Array<[string, string]>
+}
+
+export type PreviewPart = {
+  index: number
+  offset: StructureSize
+  size: StructureSize
+  template: Uint8Array
 }
 
 export type GeneratedStructure = {
   analysis: StructureAnalysis
   states: BlockState[]
   construction: Uint8Array
-  preview: Uint8Array
+  previewParts: PreviewPart[]
 }
 
 export type AnalysisBundle = {
@@ -45,7 +51,12 @@ type ProcessedStructure = {
   viewer?: ViewerModel
   states?: BlockState[]
   construction?: Uint8Array
-  preview?: Uint8Array
+  previewParts?: PreviewPart[]
+}
+
+type PositionedBlock = {
+  block: NbtRecord
+  position: StructureSize
 }
 
 function sourceStem(sourceName: string) {
@@ -306,13 +317,11 @@ async function processInput(
   )
   if (
     sizeValues.length !== 3 ||
-    sizeValues.some((value) => !Number.isInteger(value) || value < 1) ||
-    sizeValues[0] * sizeValues[1] * sizeValues[2] > MAX_VOLUME
+    sizeValues.some((value) => !Number.isInteger(value) || value < 1)
   ) {
-    throw new Error('El volumen de estasis es inválido o supera 32768 bloques.')
+    throw new Error('El tamaño de la estructura no es válido.')
   }
-
-  const size = sizeValues as [number, number, number]
+  const size = sizeValues as StructureSize
   const oldPalette = asList(root.palette, 'La paleta NBT no es válida.')
   const oldBlocks = asList(root.blocks, 'La lista de bloques NBT no es válida.')
   const states = oldPalette.map(blockState)
@@ -340,7 +349,7 @@ async function processInput(
     mapping.set(index, newId)
   })
 
-  const keptBlocks: NbtRecord[] = []
+  const keptBlocks: PositionedBlock[] = []
   const used = new Map<string, BlockState>()
   const materials = new Map<string, number>()
   const removed = new Map<string, number>()
@@ -373,6 +382,7 @@ async function processInput(
     if (AIR_BLOCKS.has(sourceState.name)) continue
 
     const key = stateKey(sourceState)
+    const position = blockPosition(block, size)
     used.set(key, sourceState)
     materials.set(
       sourceState.name,
@@ -383,13 +393,11 @@ async function processInput(
       ...block,
       state: new Int32(newId),
     }
-    keptBlocks.push(keptBlock)
+    keptBlocks.push({ block: keptBlock, position })
 
-    const position = blockPosition(block, size)
     viewerPositions.push(position[0], position[1], position[2])
     viewerStates.push(newId)
   }
-
   const filteredPalette = palette.length
     ? palette
     : [{ Name: 'minecraft:air' }]
@@ -397,7 +405,10 @@ async function processInput(
   const buildRoot: NbtRecord = {
     ...root,
     palette: withListType(filteredPalette, oldPalette),
-    blocks: withListType(keptBlocks, oldBlocks),
+    blocks: withListType(
+      keptBlocks.map(({ block }) => block),
+      oldBlocks,
+    ),
   }
 
   const viewerPalette: ViewerPaletteEntry[] = paletteStates.map((state) => ({
@@ -439,14 +450,49 @@ async function processInput(
     bedrockLevel: decoded.bedrockLevel,
   } as const
 
-  const previewRoot: NbtRecord = {
-    ...buildRoot,
-    blocks: withListType(
-      keptBlocks.map(copyWithoutBlockEntity),
-      oldBlocks,
-    ),
+  const previewParts: PreviewPart[] = []
+
+  for (const region of splitStructureRegions(size)) {
+    const partBlocks = keptBlocks.filter(({ position }) =>
+      position[0] >= region.offset[0] &&
+      position[0] < region.offset[0] + region.size[0] &&
+      position[1] >= region.offset[1] &&
+      position[1] < region.offset[1] + region.size[1] &&
+      position[2] >= region.offset[2] &&
+      position[2] < region.offset[2] + region.size[2],
+    )
+
+    if (!partBlocks.length) continue
+
+    const previewBlocks = partBlocks.map(({ block, position }) => {
+      const previewBlock = copyWithoutBlockEntity(block)
+      previewBlock.pos = withListType(
+        [
+          new Int32(position[0] - region.offset[0]),
+          new Int32(position[1] - region.offset[1]),
+          new Int32(position[2] - region.offset[2]),
+        ],
+        block.pos,
+      )
+      return previewBlock
+    })
+    const previewRoot: NbtRecord = {
+      ...buildRoot,
+      size: withListType(
+        region.size.map((value) => new Int32(value)),
+        root.size,
+      ),
+      blocks: withListType(previewBlocks, oldBlocks),
+    }
+    delete previewRoot.entities
+
+    previewParts.push({
+      index: previewParts.length,
+      offset: region.offset,
+      size: region.size,
+      template: await write(previewRoot, writeOptions),
+    })
   }
-  delete previewRoot.entities
 
   return {
     analysis,
@@ -456,7 +502,7 @@ async function processInput(
       return nameOrder || stateKey(left).localeCompare(stateKey(right))
     }),
     construction: await write(buildRoot, writeOptions),
-    preview: await write(previewRoot, writeOptions),
+    previewParts,
   }
 }
 
@@ -519,7 +565,7 @@ export async function prepareStructures(inputs: WorkerStructureInput[]) {
   }
 
   return results.map((result) => {
-    if (!result.states || !result.construction || !result.preview) {
+    if (!result.states || !result.construction || !result.previewParts) {
       throw new Error('No se pudieron preparar los archivos NBT.')
     }
 
@@ -527,7 +573,7 @@ export async function prepareStructures(inputs: WorkerStructureInput[]) {
       analysis: result.analysis,
       states: result.states,
       construction: result.construction,
-      preview: result.preview,
+      previewParts: result.previewParts,
     } satisfies GeneratedStructure
   })
 }

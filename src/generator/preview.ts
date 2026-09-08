@@ -1,4 +1,4 @@
-import type { BlockState, GeneratedStructure } from './nbt'
+import type { BlockState, GeneratedStructure, PreviewPart } from './nbt'
 
 export type TextFileWriter = (path: string, content: string) => void
 
@@ -51,6 +51,39 @@ function blockPredicate(state: BlockState) {
       .join(',') +
     ']'
   )
+}
+
+function relative(value: number) {
+  return value === 0 ? '~' : '~' + value
+}
+
+function partTag(id: string, part: PreviewPart) {
+  return 'bt_preview_part_' + id + '_' + part.index
+}
+
+function partFill(part: PreviewPart) {
+  const [x, y, z] = part.offset
+  const [width, height, depth] = part.size
+
+  return (
+    'fill ' +
+    relative(x) +
+    ' ' +
+    relative(y) +
+    ' ' +
+    relative(z) +
+    ' ' +
+    relative(x + width - 1) +
+    ' ' +
+    relative(y + height - 1) +
+    ' ' +
+    relative(z + depth - 1) +
+    ' air'
+  )
+}
+
+function partTemplate(id: string, part: PreviewPart) {
+  return NAMESPACE + ':preview/' + id + '/part_' + part.index
 }
 
 function addRotationFiles(put: TextFileWriter, root: string) {
@@ -128,7 +161,9 @@ export function addPreviewFiles(
     mcfunction(
       OBJECTIVES.map((objective) => 'scoreboard objectives remove ' + objective)
         .concat(
-          OBJECTIVES.map((objective) => 'scoreboard objectives add ' + objective + ' dummy'),
+          OBJECTIVES.map(
+            (objective) => 'scoreboard objectives add ' + objective + ' dummy',
+          ),
         )
         .concat([
           'scoreboard players set #minus_one btpv_math -1',
@@ -163,11 +198,11 @@ export function addPreviewFiles(
   )
 
   const dispatch: string[] = []
-  const finish: string[] = []
+  const next: string[] = []
+  const cleanup: string[] = []
 
   structures.forEach((structure) => {
-    const { analysis, states } = structure
-    const [width, height, depth] = analysis.size
+    const { analysis, states, previewParts } = structure
     const id = analysis.id
     const stage = '@e[tag=bt_preview_stage_' + id + ',limit=1]'
 
@@ -198,6 +233,21 @@ export function addPreviewFiles(
         ' with storage builder_tables_generated:preview runtime',
     )
 
+    if (!previewParts.length) {
+      put(
+        root + 'start/' + id + '.mcfunction',
+        mcfunction([
+          'function builder_tables_generated:preview/clear',
+          'tellraw @s ' +
+            JSON.stringify({
+              text: '[Preview] ' + analysis.name + ' no tiene bloques compatibles.',
+              color: 'yellow',
+            }),
+        ]),
+      )
+      return
+    }
+
     const start = [
       'function builder_tables_generated:preview/clear',
       'scoreboard players set #emitted btpv_emit 0',
@@ -208,14 +258,6 @@ export function addPreviewFiles(
         ' ~ run summon minecraft:marker ~ ~ ~ {Tags:["bt_preview_stage","bt_preview_stage_' +
         id +
         '"]}',
-      'execute as ' + stage + ' run scoreboard players set @s btpv_x 0',
-      'execute as ' + stage + ' run scoreboard players set @s btpv_y 0',
-      'execute as ' + stage + ' run scoreboard players set @s btpv_z 0',
-      'execute as ' + stage + ' run scoreboard players set @s btpv_minx 0',
-      'execute as ' + stage + ' run scoreboard players set @s btpv_minz 0',
-      'execute as ' + stage + ' run scoreboard players set @s btpv_endx ' + width,
-      'execute as ' + stage + ' run scoreboard players set @s btpv_endy ' + height,
-      'execute as ' + stage + ' run scoreboard players set @s btpv_endz ' + depth,
     ]
 
     for (let rotation = 0; rotation < 4; rotation += 1) {
@@ -230,39 +272,92 @@ export function addPreviewFiles(
     }
 
     start.push(
-      'execute positioned ~ ' +
-        STASIS_Y +
-        ' ~ run fill ~ ~ ~ ~' +
-        (width - 1) +
-        ' ~' +
-        (height - 1) +
-        ' ~' +
-        (depth - 1) +
-        ' air',
-      'execute positioned ~ ' +
-        STASIS_Y +
-        ' ~ run place template builder_tables_generated:preview/' +
+      'execute as ' +
+        stage +
+        ' at @s run function builder_tables_generated:preview/part/' +
         id +
-        ' ~ ~ ~ none',
+        '/load_' +
+        previewParts[0].index,
       'tellraw @s ' +
         JSON.stringify({
-          text: '[Preview] Escaneo iniciado: ' + analysis.name + '.',
+          text:
+            '[Preview] Escaneo iniciado: ' +
+            analysis.name +
+            ' (' +
+            previewParts.length +
+            ' lote' +
+            (previewParts.length === 1 ? '' : 's') +
+            ').',
           color: 'aqua',
         }),
     )
     put(root + 'start/' + id + '.mcfunction', mcfunction(start))
 
-    finish.push(
-      'execute as @e[tag=bt_preview_stage_' +
-        id +
-        '] at @s run fill ~ ~ ~ ~' +
-        (width - 1) +
-        ' ~' +
-        (height - 1) +
-        ' ~' +
-        (depth - 1) +
-        ' air',
-    )
+    previewParts.forEach((part, index) => {
+      const tag = partTag(id, part)
+      const nextPart = previewParts[index + 1]
+      const load = [
+        'tag @s add ' + tag,
+        'scoreboard players set @s btpv_x ' + part.offset[0],
+        'scoreboard players set @s btpv_y ' + part.offset[1],
+        'scoreboard players set @s btpv_z ' + part.offset[2],
+        'scoreboard players set @s btpv_minx ' + part.offset[0],
+        'scoreboard players set @s btpv_minz ' + part.offset[2],
+        'scoreboard players set @s btpv_endx ' +
+          (part.offset[0] + part.size[0]),
+        'scoreboard players set @s btpv_endy ' +
+          (part.offset[1] + part.size[1]),
+        'scoreboard players set @s btpv_endz ' +
+          (part.offset[2] + part.size[2]),
+        partFill(part),
+        'place template ' +
+          partTemplate(id, part) +
+          ' ' +
+          relative(part.offset[0]) +
+          ' ' +
+          relative(part.offset[1]) +
+          ' ' +
+          relative(part.offset[2]) +
+          ' none',
+      ]
+      put(
+        root + 'part/' + id + '/load_' + part.index + '.mcfunction',
+        mcfunction(load),
+      )
+
+      const complete = [partFill(part), 'tag @s remove ' + tag]
+      if (nextPart) {
+        complete.push(
+          'function builder_tables_generated:preview/part/' +
+            id +
+            '/load_' +
+            nextPart.index,
+        )
+      } else {
+        complete.push('function builder_tables_generated:preview/finish')
+      }
+      put(
+        root + 'part/' + id + '/complete_' + part.index + '.mcfunction',
+        mcfunction(complete),
+      )
+
+      next.push(
+        'execute if entity @s[tag=' +
+          tag +
+          '] run return run function builder_tables_generated:preview/part/' +
+          id +
+          '/complete_' +
+          part.index,
+      )
+      cleanup.push(
+        'execute as @e[tag=bt_preview_stage_' +
+          id +
+          ',tag=' +
+          tag +
+          '] at @s run ' +
+          partFill(part),
+      )
+    })
   })
 
   put(root + 'dispatch.mcfunction', mcfunction(dispatch))
@@ -286,22 +381,24 @@ export function addPreviewFiles(
       'execute if score @s btpv_x = @s btpv_minx run scoreboard players add @s btpv_z 1',
       'execute if score @s btpv_z >= @s btpv_endz run scoreboard players operation @s btpv_z = @s btpv_minz',
       'execute if score @s btpv_x = @s btpv_minx if score @s btpv_z = @s btpv_minz run scoreboard players add @s btpv_y 1',
-      'execute if score @s btpv_y >= @s btpv_endy run function builder_tables_generated:preview/finish',
+      'execute if score @s btpv_y >= @s btpv_endy run function builder_tables_generated:preview/next',
     ]),
   )
+  put(root + 'next.mcfunction', mcfunction(next))
+  put(root + 'cleanup.mcfunction', mcfunction(cleanup))
   put(
     root + 'finish.mcfunction',
-    mcfunction(
-      finish.concat([
-        'kill @e[tag=bt_preview_stage]',
-        'tellraw @a [{"text":"[Preview] Displays creados: ","color":"green"},{"score":{"name":"#emitted","objective":"btpv_emit"}}]',
-      ]),
-    ),
+    mcfunction([
+      'function builder_tables_generated:preview/cleanup',
+      'kill @e[tag=bt_preview_stage]',
+      'tellraw @a [{"text":"[Preview] Displays creados: ","color":"green"},{"score":{"name":"#emitted","objective":"btpv_emit"}}]',
+    ]),
   )
   put(
     root + 'clear.mcfunction',
     mcfunction([
-      'execute if entity @e[tag=bt_preview_stage] run function builder_tables_generated:preview/finish',
+      'function builder_tables_generated:preview/cleanup',
+      'kill @e[tag=bt_preview_stage]',
       'kill @e[tag=bt_preview_anchor]',
       'kill @e[tag=bt_preview]',
     ]),
