@@ -45,8 +45,8 @@ const BASE_PACK = '/downloads/BuilderTables_26.2_controller_menu_v2.zip'
 const GENERATED_PACK = 'BuilderTables_26.2_generated.zip'
 
 const StructureViewer = lazy(async () => {
-  const module = await import('./components/StructureViewer')
-  return { default: module.StructureViewer }
+  const module = await import('./components/MinecraftStructureViewer')
+  return { default: module.MinecraftStructureViewer }
 })
 
 function formatBytes(bytes: number) {
@@ -128,7 +128,9 @@ function App() {
   const [downloadUrl, setDownloadUrl] = useState('')
   const [viewerModels, setViewerModels] = useState<ViewerModel[]>([])
   const [selectedViewerKey, setSelectedViewerKey] = useState('')
+  const [viewerAssetFile, setViewerAssetFile] = useState<File | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  const viewerAssetInputRef = useRef<HTMLInputElement>(null)
   const workerRef = useRef<Worker | null>(null)
   const analysisRequestRef = useRef('')
   const generationRequestRef = useRef('')
@@ -353,6 +355,13 @@ function App() {
   const onFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     if (event.target.files) addFiles(event.target.files)
     event.target.value = ''
+  }
+
+  const onViewerAssetFileChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    event.target.value = ''
+    if (!file || !/\.(jar|zip)$/i.test(file.name)) return
+    setViewerAssetFile(file)
   }
 
   const onDrop = (event: DragEvent<HTMLDivElement>) => {
@@ -690,31 +699,75 @@ function App() {
                   <span className="eyebrow">Vista previa</span>
                   <h2>Visor 3D de la construcción</h2>
                   <p>
-                    Muestra los bloques que se conservarán, con colores por
-                    material. Arrastra para examinar la estructura.
+                    Muestra los bloques que se conservarán. Carga tu archivo
+                    local de Minecraft para ver modelos y texturas reales.
                   </p>
                 </div>
               </div>
-              {viewerModels.length > 1 && selectedViewer ? (
-                <label className="viewer-selector">
-                  <span>Construcción</span>
-                  <select
-                    value={selectedViewer.key}
-                    onChange={(event) => setSelectedViewerKey(event.target.value)}
-                  >
-                    {viewerModels.map((model) => {
-                      const structure = structures.find(
-                        (entry) => entry.id === model.key,
-                      )
-                      return (
-                        <option key={model.key} value={model.key}>
-                          {structure ? displayName(structure) : model.key}
-                        </option>
-                      )
-                    })}
-                  </select>
-                </label>
-              ) : null}
+              <div className="viewer-card-actions">
+                <div className="viewer-assets">
+                  <div>
+                    <span>Recursos visuales</span>
+                    <strong>
+                      {viewerAssetFile
+                        ? viewerAssetFile.name
+                        : 'Vista simplificada'}
+                    </strong>
+                    <small>
+                      {viewerAssetFile
+                        ? formatBytes(viewerAssetFile.size) + ' · solo en este navegador'
+                        : 'Selecciona client.jar 26.2 para usar modelos y texturas'}
+                    </small>
+                  </div>
+                  <div className="viewer-assets-actions">
+                    <button
+                      className="viewer-assets-button"
+                      type="button"
+                      onClick={() => viewerAssetInputRef.current?.click()}
+                    >
+                      {viewerAssetFile ? 'Cambiar' : 'Cargar client.jar'}
+                    </button>
+                    {viewerAssetFile ? (
+                      <button
+                        className="viewer-assets-clear"
+                        type="button"
+                        onClick={() => setViewerAssetFile(null)}
+                        aria-label="Quitar recursos visuales locales"
+                        title="Quitar recursos visuales locales"
+                      >
+                        <X size={15} />
+                      </button>
+                    ) : null}
+                    <input
+                      ref={viewerAssetInputRef}
+                      className="visually-hidden"
+                      type="file"
+                      accept=".jar,.zip,application/java-archive,application/zip"
+                      onChange={onViewerAssetFileChange}
+                    />
+                  </div>
+                </div>
+                {viewerModels.length > 1 && selectedViewer ? (
+                  <label className="viewer-selector">
+                    <span>Construcción</span>
+                    <select
+                      value={selectedViewer.key}
+                      onChange={(event) => setSelectedViewerKey(event.target.value)}
+                    >
+                      {viewerModels.map((model) => {
+                        const structure = structures.find(
+                          (entry) => entry.id === model.key,
+                        )
+                        return (
+                          <option key={model.key} value={model.key}>
+                            {structure ? displayName(structure) : model.key}
+                          </option>
+                        )
+                      })}
+                    </select>
+                  </label>
+                ) : null}
+              </div>
             </div>
 
             {selectedViewer ? (
@@ -731,7 +784,11 @@ function App() {
                   </div>
                 }
               >
-                <StructureViewer model={selectedViewer} theme={theme} />
+                <StructureViewer
+                  model={selectedViewer}
+                  theme={theme}
+                  assetFile={viewerAssetFile}
+                />
               </Suspense>
             ) : (
               <div className="viewer-pending">
@@ -766,6 +823,11 @@ function App() {
                 <span>
                   <strong>{selectedViewerAnalysis?.stateCount ?? 0}</strong>
                   estados de bloque
+                </span>
+                <span>
+                  {viewerAssetFile
+                    ? 'Recursos locales: ' + viewerAssetFile.name
+                    : 'Carga client.jar para ver texturas reales'}
                 </span>
                 <span>Bloques de mod se excluyen automáticamente</span>
               </div>

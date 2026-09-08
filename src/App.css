@@ -1295,9 +1295,101 @@ h2 {
   margin-bottom: 0;
 }
 
+.viewer-card-actions {
+  display: grid;
+  min-width: 260px;
+  gap: 10px;
+}
+
+.viewer-assets {
+  display: flex;
+  gap: 11px;
+  align-items: center;
+  justify-content: space-between;
+  min-width: 0;
+  padding: 10px 11px;
+  color: #718096;
+  border: 1px solid #d7e1ee;
+  border-radius: 10px;
+  background: #fbfdff;
+}
+
+.viewer-assets > div:first-child {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+}
+
+.viewer-assets span {
+  font-size: 0.64rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.viewer-assets strong {
+  overflow: hidden;
+  color: #40506a;
+  font-size: 0.76rem;
+  font-weight: 760;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.viewer-assets small {
+  overflow: hidden;
+  font-size: 0.68rem;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.viewer-assets-actions {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  flex: 0 0 auto;
+}
+
+.viewer-assets-button,
+.viewer-assets-clear {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 30px;
+  color: var(--blue);
+  font: inherit;
+  font-size: 0.68rem;
+  font-weight: 760;
+  cursor: pointer;
+  border: 1px solid #cbdafd;
+  border-radius: 7px;
+  background: white;
+}
+
+.viewer-assets-button {
+  padding: 6px 8px;
+  white-space: nowrap;
+}
+
+.viewer-assets-clear {
+  width: 30px;
+  padding: 0;
+}
+
+.viewer-assets-button:hover,
+.viewer-assets-button:focus-visible,
+.viewer-assets-clear:hover,
+.viewer-assets-clear:focus-visible {
+  color: white;
+  outline: 0;
+  border-color: var(--blue);
+  background: var(--blue);
+}
+
 .viewer-selector {
   display: grid;
-  min-width: 190px;
+  min-width: 0;
   gap: 5px;
   color: #718096;
   font-size: 0.69rem;
@@ -1391,6 +1483,24 @@ h2 {
 .theme-dark .viewer-selector {
   color: #b7c5d8;
 }
+
+.theme-dark .viewer-assets {
+  color: #b7c5d8;
+  border-color: #435c7c;
+  background: #1b2b40;
+}
+
+.theme-dark .viewer-assets strong {
+  color: #e5edf9;
+}
+
+.theme-dark .viewer-assets-button,
+.theme-dark .viewer-assets-clear {
+  color: #b9d0ff;
+  border-color: #435f8b;
+  background: #203653;
+}
+
 .theme-dark .viewer-card {
   background: var(--surface);
 }
@@ -1409,6 +1519,15 @@ h2 {
   .viewer-card-header {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .viewer-card-actions,
+  .viewer-assets {
+    width: 100%;
+  }
+
+  .viewer-card-actions {
+    min-width: 0;
   }
 
   .viewer-selector {

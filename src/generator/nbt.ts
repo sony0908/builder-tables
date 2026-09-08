@@ -414,6 +414,7 @@ async function processInput(
   const viewerPalette: ViewerPaletteEntry[] = paletteStates.map((state) => ({
     name: state.name,
     color: blockColor(state.name),
+    properties: Object.fromEntries(state.properties),
   }))
   const viewer: ViewerModel = {
     key: input.key,

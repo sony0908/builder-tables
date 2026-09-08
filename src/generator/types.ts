@@ -6,6 +6,7 @@ export type MaterialCount = {
 export type ViewerPaletteEntry = {
   name: string
   color: string
+  properties: Record<string, string>
 }
 
 export type ViewerModel = {
