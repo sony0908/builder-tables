@@ -27,6 +27,7 @@ import type {
   WorkerResponse,
   WorkerStructureInput,
 } from './generator/types'
+import { PriceCatalog } from './components/PriceCatalog'
 import './App.css'
 
 type StructurePhase = 'queued' | 'analyzing' | 'ready' | 'rejected'
@@ -501,6 +502,10 @@ function App() {
             <Info size={17} />
             Documentación
           </a>
+          <a className="nav-link" href="#prices">
+            <Sparkles size={17} />
+            Precios
+          </a>
         </nav>
 
         <div className="header-actions">
@@ -634,7 +639,7 @@ function App() {
                 <h2>Añade tus estructuras</h2>
                 <p>
                   Selecciona NBT de Minecraft Java y, opcionalmente, un JSON
-                  con el mismo nombre para fijar el precio y título.
+                  con el mismo nombre para fijar el título o sobrescribir el precio.
                 </p>
               </div>
             </div>
@@ -654,7 +659,7 @@ function App() {
               </span>
               <strong>Arrastra tus archivos .nbt aquí</strong>
               <span>
-                Puedes añadir un .json del mismo nombre: {'{'}"name","price"{'}'}
+                Puedes añadir un .json del mismo nombre para un título o precio manual.
               </span>
               <button
                 className="secondary-button"
@@ -973,6 +978,8 @@ function App() {
           </section>
         </section>
       </main>
+
+      <PriceCatalog />
 
       <section id="guide" className="installation-guide">
         <div>

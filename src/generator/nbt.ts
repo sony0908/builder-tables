@@ -7,6 +7,7 @@ import type {
   WorkerStructureInput,
 } from './types'
 import { splitStructureRegions, type StructureSize } from './geometry'
+import { calculateStructurePrice } from './pricing'
 
 const AIR_BLOCKS = new Set([
   'minecraft:air',
@@ -424,6 +425,11 @@ async function processInput(
     palette: viewerPalette,
   }
 
+  const materialCounts = [...materials.entries()]
+    .map(([name, count]) => ({ name, count }))
+    .sort((left, right) => right.count - left.count)
+  const automaticPrice = calculateStructurePrice(materialCounts)
+
   const analysis: StructureAnalysis = {
     key: input.key,
     sourceName: input.sourceName,
@@ -431,11 +437,9 @@ async function processInput(
     name: metadata.name,
     size,
     count: keptBlocks.length,
-    price: metadata.price ?? Math.ceil(keptBlocks.length / 10),
+    price: metadata.price ?? automaticPrice,
     stateCount: used.size,
-    materials: [...materials.entries()]
-      .map(([name, count]) => ({ name, count }))
-      .sort((left, right) => right.count - left.count),
+    materials: materialCounts,
     removed: [...removed.entries()]
       .map(([name, count]) => ({ name, count }))
       .sort((left, right) => left.name.localeCompare(right.name)),
