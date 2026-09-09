@@ -6,6 +6,7 @@ import {
   PRICE_CATALOG_GROUPS,
   PRICE_POINTS_PER_EMERALD,
 } from '../generator/pricing'
+import { BlockPriceIcon } from './BlockPriceIcon'
 import './PriceCatalog.css'
 
 function blockLabel(blockId: string) {
@@ -20,7 +21,7 @@ function priceLabel(points: number) {
   return formatBlockPrice(points) + ' esmeraldas'
 }
 
-export function PriceCatalog() {
+export function PriceCatalog({ assetFile }: { assetFile: File | null }) {
   const [query, setQuery] = useState('')
   const [openGroups, setOpenGroups] = useState<string[]>([])
   const normalizedQuery = query.trim().toLocaleLowerCase()
@@ -68,6 +69,7 @@ export function PriceCatalog() {
         <div className="price-catalog-stats" aria-label="Resumen del catálogo">
           <span><strong>{PRICE_CATALOG_BLOCK_COUNT.toLocaleString('es-CL')}</strong> bloques</span>
           <span><strong>{PRICE_POINTS_PER_EMERALD}</strong> puntos = 1 esmeralda</span>
+          <span className="price-asset-status">{assetFile ? 'Texturas reales activas' : 'Carga client.jar para texturas'}</span>
         </div>
       </div>
 
@@ -112,7 +114,8 @@ export function PriceCatalog() {
                 <div className="price-block-grid" role="list">
                   {group.blocks.map((blockId) => (
                     <div className="price-block" key={blockId} role="listitem">
-                      <span>
+                      <BlockPriceIcon blockId={blockId} assetFile={assetFile} />
+                      <span className="price-block-copy">
                         <strong>{blockLabel(blockId)}</strong>
                         <small>{blockId}</small>
                       </span>

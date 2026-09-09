@@ -979,7 +979,7 @@ function App() {
         </section>
       </main>
 
-      <PriceCatalog />
+      <PriceCatalog assetFile={viewerAssetFile} />
 
       <section id="guide" className="installation-guide">
         <div>

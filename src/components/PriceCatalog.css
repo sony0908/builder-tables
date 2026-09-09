@@ -231,7 +231,7 @@
   background: white;
 }
 
-.price-block > span {
+.price-block-copy {
   display: grid;
   min-width: 0;
   gap: 2px;
@@ -381,4 +381,16 @@
     grid-template-columns: 1fr;
     padding: 8px;
   }
+}
+
+.price-catalog-stats .price-asset-status {
+  color: #3f68ba;
+  border-color: #c9d9fb;
+  background: #edf3ff;
+}
+
+.theme-dark .price-catalog-stats .price-asset-status {
+  color: #bfd4ff;
+  border-color: #3c5c91;
+  background: #203b63;
 }

@@ -18,11 +18,15 @@ import {
   Vector3,
   WebGLRenderer,
 } from 'three'
-import type { Object3D } from 'three'
-import * as Three from 'three'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import { Maximize2, RotateCcw } from 'lucide-react'
 import type { ViewerModel } from '../generator/types'
+import {
+  getMinecraftRenderer,
+  getPreparedAssets,
+  type MinecraftSceneBlock,
+  type MinecraftSceneHandle,
+} from './minecraft-renderer'
 import './MinecraftStructureViewer.css'
 
 type StructureViewerProps = {
@@ -39,88 +43,12 @@ type ViewerController = {
   toggleFullscreen: () => void
 }
 
-type MinecraftSceneBlock = {
-  id: string
-  properties: Record<string, string>
-  pos: [number, number, number]
-}
-
-type MinecraftSceneHandle = {
-  group: Object3D
-  bounds: Box3
-  sortTranslucent: (camera: PerspectiveCamera) => void
-  dispose: () => void
-}
-
-type MinecraftRendererModule = {
-  configure: (options: {
-    THREE: typeof Three
-    assetsUrl?: string | false
-  }) => void
-  prepareAssets: (inputs: Array<File | Blob | ArrayBuffer | Uint8Array>) => Promise<unknown>
-  createScene: (
-    assets: unknown,
-    blocks: MinecraftSceneBlock[],
-    options: {
-      lighting: 'world'
-      version: string
-      defaults: 'game'
-      optimize: boolean
-      shouldCancel: () => boolean
-      onProgress: (
-        stage: { index: number; count: number; name: string },
-        done: number,
-        total: number,
-      ) => void
-    },
-  ) => Promise<MinecraftSceneHandle | null>
-}
-
 type RenderMode = 'simple' | 'loading' | 'textured' | 'fallback'
-
-const BMR_MODULE_PATH =
-  import.meta.env.BASE_URL +
-  'vendor/block-model-renderer/block-model-renderer.min.js'
-const BMR_ASSETS_PATH =
-  import.meta.env.BASE_URL + 'vendor/block-model-renderer/assets.zip'
-
-let minecraftRendererPromise: Promise<MinecraftRendererModule> | null = null
-const preparedAssets = new WeakMap<File, Promise<unknown>>()
 
 function hasWebGl() {
   const canvas = document.createElement('canvas')
   return Boolean(canvas.getContext('webgl2') || canvas.getContext('webgl'))
 }
-
-function getMinecraftRenderer() {
-  if (!minecraftRendererPromise) {
-    minecraftRendererPromise = import(
-      /* @vite-ignore */ BMR_MODULE_PATH
-    ).then((module) => {
-      const renderer = module as MinecraftRendererModule
-      renderer.configure({
-        THREE: Three,
-        assetsUrl: BMR_ASSETS_PATH,
-      })
-      return renderer
-    })
-  }
-
-  return minecraftRendererPromise
-}
-
-async function getPreparedAssets(
-  renderer: MinecraftRendererModule,
-  assetFile: File,
-) {
-  let promise = preparedAssets.get(assetFile)
-  if (!promise) {
-    promise = renderer.prepareAssets([assetFile])
-    preparedAssets.set(assetFile, promise)
-  }
-  return promise
-}
-
 function modelBounds(model: ViewerModel) {
   const bounds = new Box3().makeEmpty()
   const point = new Vector3()
