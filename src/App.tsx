@@ -906,6 +906,36 @@ function App() {
                             .join(', ')}
                         </div>
                       ) : null}
+                      {analysis?.status === 'ready' && analysis.policy?.dependencies.length ? (
+                        <div className="removed-blocks-note">
+                          Dependencias survival:{' '}
+                          {analysis.policy.dependencies
+                            .map(
+                              (dependency) =>
+                                dependency.id +
+                                ' × ' +
+                                dependency.count +
+                                (dependency.billable ? '' : ' (informativa)'),
+                            )
+                            .join(', ')}
+                        </div>
+                      ) : null}
+                      {analysis?.status === 'ready' && analysis.policy?.worldLimits.length ? (
+                        <div className="removed-blocks-note">
+                          Límite de mundo:{' '}
+                          {analysis.policy.worldLimits
+                            .map(
+                              (limit) =>
+                                limit.id +
+                                ' × ' +
+                                limit.count +
+                                '/' +
+                                limit.maximum +
+                                ' — revisión manual requerida',
+                            )
+                            .join(', ')}
+                        </div>
+                      ) : null}
                       {analysis?.error ? (
                         <div className="review-error">{analysis.error}</div>
                       ) : null}

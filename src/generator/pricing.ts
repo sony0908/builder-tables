@@ -1,4 +1,6 @@
+import priceData from './data/block-prices-26_2.json'
 import { VANILLA_BLOCK_IDS_26_2 } from './vanilla-blocks-26_2'
+import type { PolicyPricing } from './survival-policy'
 
 /** Ten points equal one emerald. The final structure total is rounded up. */
 export const PRICE_POINTS_PER_EMERALD = 10
@@ -16,6 +18,11 @@ type PriceRule = Omit<PriceCatalogGroup, 'blocks'> & {
 }
 
 type CountedMaterial = { name: string; count: number }
+type PriceOverride = { id: string; points: number }
+type PriceData = {
+  pointsPerEmerald: number
+  overrides: PriceOverride[]
+}
 
 const pathOf = (blockId: string) => blockId.replace(/^minecraft:/, '')
 const has = (value: string, pattern: RegExp) => pattern.test(value)
@@ -25,6 +32,7 @@ const special = new Set([
   'conduit',
   'dragon_egg',
   'end_portal_frame',
+  'frogspawn',
   'heavy_core',
   'lodestone',
   'respawn_anchor',
@@ -32,6 +40,15 @@ const special = new Set([
   'trial_spawner',
   'vault',
 ])
+const configuredPriceData = priceData as PriceData
+
+if (configuredPriceData.pointsPerEmerald !== PRICE_POINTS_PER_EMERALD) {
+  throw new Error('La unidad de precios 26.2 no coincide con el generador.')
+}
+
+const overriddenPoints = new Map(
+  configuredPriceData.overrides.map((entry) => [entry.id, entry.points]),
+)
 
 // The order is intentional: the first matching rule wins.
 const PRICE_RULES: readonly PriceRule[] = [
@@ -135,16 +152,32 @@ export const PRICE_CATALOG_GROUPS: readonly PriceCatalogGroup[] = DISPLAY_ORDER.
 export const PRICE_CATALOG_BLOCK_COUNT = VANILLA_BLOCK_IDS_26_2.length
 
 export function getBlockPricePoints(blockId: string) {
-  return groupForBlock.get(blockId)?.points ?? 1
+  return overriddenPoints.get(blockId) ?? groupForBlock.get(blockId)?.points ?? 1
 }
 
-export function calculateStructurePrice(materials: readonly CountedMaterial[]) {
-  const points = materials.reduce(
-    (total, material) =>
-      total + Math.max(0, Math.trunc(material.count)) * getBlockPricePoints(material.name),
+export function calculateStructurePrice(
+  materials: readonly CountedMaterial[],
+  policyPricing?: PolicyPricing,
+) {
+  const replaced = new Map(
+    policyPricing?.replacements.map((entry) => [entry.name, entry.count]) ?? [],
+  )
+  const materialPoints = materials.reduce((total, material) => {
+    const count = Math.max(
+      0,
+      Math.trunc(material.count) - (replaced.get(material.name) ?? 0),
+    )
+    return total + count * getBlockPricePoints(material.name)
+  }, 0)
+  const dependencyPoints = (policyPricing?.dependencies ?? []).reduce(
+    (total, dependency) =>
+      total +
+      Math.max(0, Math.trunc(dependency.count)) *
+        getBlockPricePoints(dependency.name),
     0,
   )
-  return Math.ceil(points / PRICE_POINTS_PER_EMERALD)
+
+  return Math.ceil((materialPoints + dependencyPoints) / PRICE_POINTS_PER_EMERALD)
 }
 
 export function formatBlockPrice(points: number) {

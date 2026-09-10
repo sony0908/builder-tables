@@ -1,0 +1,294 @@
+{
+  "schemaVersion": 1,
+  "minecraftVersion": "26.2",
+  "mode": "survival_strict_with_explicit_derived_states",
+  "deny": [
+    { "id": "minecraft:barrier", "reason": "Bloque de operador." },
+    { "id": "minecraft:bedrock", "reason": "Infraestructura inamovible del mundo." },
+    { "id": "minecraft:budding_amethyst", "reason": "No se puede trasladar como bloque survival." },
+    { "id": "minecraft:chain_command_block", "reason": "Bloque de operador." },
+    { "id": "minecraft:command_block", "reason": "Bloque de operador." },
+    { "id": "minecraft:end_gateway", "reason": "Infraestructura del End no reproducible en survival." },
+    { "id": "minecraft:end_portal", "reason": "Portal del End no reproducible en survival." },
+    { "id": "minecraft:end_portal_frame", "reason": "Marco de portal no obtenible en survival." },
+    { "id": "minecraft:jigsaw", "reason": "Bloque técnico de generación." },
+    { "id": "minecraft:light", "reason": "Bloque técnico de operador." },
+    { "id": "minecraft:moving_piston", "reason": "Estado transitorio de pistón." },
+    { "id": "minecraft:petrified_oak_slab", "reason": "Bloque de legado no obtenible en survival actual." },
+    { "id": "minecraft:piston_head", "reason": "Estado transitorio de pistón." },
+    { "id": "minecraft:reinforced_deepslate", "reason": "No se puede trasladar como bloque survival." },
+    { "id": "minecraft:repeating_command_block", "reason": "Bloque de operador." },
+    { "id": "minecraft:spawner", "reason": "No se puede obtener ni mover en survival." },
+    { "id": "minecraft:structure_block", "reason": "Bloque técnico de operador." },
+    { "id": "minecraft:structure_void", "reason": "Bloque técnico no permitido en planos survival." },
+    { "id": "minecraft:suspicious_gravel", "reason": "No conserva una función arqueológica reproducible." },
+    { "id": "minecraft:suspicious_sand", "reason": "No conserva una función arqueológica reproducible." },
+    { "id": "minecraft:test_block", "reason": "Bloque de pruebas." },
+    { "id": "minecraft:test_instance_block", "reason": "Bloque de pruebas." },
+    { "id": "minecraft:trial_spawner", "reason": "No se puede obtener ni mover en survival." },
+    { "id": "minecraft:vault", "reason": "No se puede mover en survival." },
+    { "id": "minecraft:frosted_ice", "reason": "Estado temporal no conservable." }
+  ],
+  "rules": [
+    {
+      "id": "water_source",
+      "classification": "fluid",
+      "match": { "ids": ["minecraft:water"] },
+      "priceMode": "replace",
+      "notice": "Agua declarada como fuente mediante cubeta.",
+      "requirements": [{ "id": "minecraft:water_bucket", "count": 1 }]
+    },
+    {
+      "id": "lava_source",
+      "classification": "fluid",
+      "match": { "ids": ["minecraft:lava"] },
+      "priceMode": "replace",
+      "notice": "Lava declarada como fuente mediante cubeta.",
+      "requirements": [{ "id": "minecraft:lava_bucket", "count": 1 }]
+    },
+    {
+      "id": "powder_snow_source",
+      "classification": "fluid",
+      "match": { "ids": ["minecraft:powder_snow"] },
+      "priceMode": "replace",
+      "notice": "Nieve en polvo declarada como fuente mediante cubeta.",
+      "requirements": [{ "id": "minecraft:powder_snow_bucket", "count": 1 }]
+    },
+    {
+      "id": "water_cauldron",
+      "classification": "derived",
+      "match": { "ids": ["minecraft:water_cauldron"] },
+      "priceMode": "replace",
+      "notice": "Caldero con agua normalizado a caldero y cubeta.",
+      "requirements": [
+        { "id": "minecraft:cauldron", "count": 1 },
+        { "id": "minecraft:water_bucket", "count": 1 }
+      ]
+    },
+    {
+      "id": "lava_cauldron",
+      "classification": "derived",
+      "match": { "ids": ["minecraft:lava_cauldron"] },
+      "priceMode": "replace",
+      "notice": "Caldero con lava normalizado a caldero y cubeta.",
+      "requirements": [
+        { "id": "minecraft:cauldron", "count": 1 },
+        { "id": "minecraft:lava_bucket", "count": 1 }
+      ]
+    },
+    {
+      "id": "powder_snow_cauldron",
+      "classification": "derived",
+      "match": { "ids": ["minecraft:powder_snow_cauldron"] },
+      "priceMode": "replace",
+      "notice": "Caldero con nieve en polvo normalizado a caldero y cubeta.",
+      "requirements": [
+        { "id": "minecraft:cauldron", "count": 1 },
+        { "id": "minecraft:powder_snow_bucket", "count": 1 }
+      ]
+    },
+    {
+      "id": "bubble_column_up",
+      "classification": "dependency",
+      "match": { "ids": ["minecraft:bubble_column"], "properties": { "drag": "true" } },
+      "priceMode": "replace",
+      "notice": "Columna de burbujas ascendente declarada con agua y soul sand.",
+      "requirements": [
+        { "id": "minecraft:water_bucket", "count": 1 },
+        { "id": "minecraft:soul_sand", "count": 1 }
+      ]
+    },
+    {
+      "id": "bubble_column_down",
+      "classification": "dependency",
+      "match": { "ids": ["minecraft:bubble_column"], "properties": { "drag": "false" } },
+      "priceMode": "replace",
+      "notice": "Columna de burbujas descendente declarada con agua y magma block.",
+      "requirements": [
+        { "id": "minecraft:water_bucket", "count": 1 },
+        { "id": "minecraft:magma_block", "count": 1 }
+      ]
+    },
+    {
+      "id": "nether_portal",
+      "classification": "dependency",
+      "match": { "ids": ["minecraft:nether_portal"] },
+      "priceMode": "replace",
+      "notice": "Portal del Nether declarado con obsidiana y activación; el encendido se cobra una vez por plano.",
+      "requirements": [
+        { "id": "minecraft:obsidian", "count": 1 },
+        { "id": "minecraft:flint_and_steel", "count": 1, "scope": "structure" }
+      ]
+    },
+    {
+      "id": "fire",
+      "classification": "dependency",
+      "match": { "ids": ["minecraft:fire", "minecraft:soul_fire"] },
+      "priceMode": "replace",
+      "notice": "Fuego declarado mediante un encendido explícito por plano.",
+      "requirements": [{ "id": "minecraft:flint_and_steel", "count": 1, "scope": "structure" }]
+    },
+    {
+      "id": "waterlogged",
+      "classification": "dependency",
+      "match": { "properties": { "waterlogged": "true" } },
+      "priceMode": "add",
+      "notice": "Estado waterlogged declarado con una fuente de agua adicional.",
+      "requirements": [{ "id": "minecraft:water_bucket", "count": 1 }]
+    },
+    {
+      "id": "potted_block",
+      "classification": "derived",
+      "match": { "prefix": "minecraft:potted_" },
+      "priceMode": "replace",
+      "sourceTransform": "potted_plant",
+      "notice": "Maceta normalizada a flower pot más su planta.",
+      "requirements": [{ "id": "minecraft:flower_pot", "count": 1 }]
+    },
+    {
+      "id": "candle_cake",
+      "classification": "derived",
+      "match": { "suffix": "_candle_cake" },
+      "priceMode": "replace",
+      "sourceTransform": "candle_from_cake",
+      "notice": "Vela sobre torta normalizada a torta y vela.",
+      "requirements": [{ "id": "minecraft:cake", "count": 1 }]
+    },
+    {
+      "id": "wall_attachment",
+      "classification": "derived",
+      "match": { "contains": "_wall_" },
+      "priceMode": "replace",
+      "sourceTransform": "wall_attachment",
+      "notice": "Adjunto de pared normalizado a su ítem padre.",
+      "requirements": []
+    },
+    {
+      "id": "wall_torch",
+      "classification": "derived",
+      "match": { "suffix": "wall_torch" },
+      "priceMode": "replace",
+      "sourceTransform": "wall_attachment",
+      "notice": "Antorcha de pared normalizada a su ítem padre.",
+      "requirements": []
+    },
+    {
+      "id": "growth_states",
+      "classification": "derived",
+      "match": {
+        "ids": [
+          "minecraft:attached_melon_stem",
+          "minecraft:attached_pumpkin_stem",
+          "minecraft:bamboo_sapling",
+          "minecraft:beetroots",
+          "minecraft:big_dripleaf_stem",
+          "minecraft:carrots",
+          "minecraft:cave_vines",
+          "minecraft:cave_vines_plant",
+          "minecraft:cocoa",
+          "minecraft:kelp_plant",
+          "minecraft:melon_stem",
+          "minecraft:pitcher_crop",
+          "minecraft:potatoes",
+          "minecraft:pumpkin_stem",
+          "minecraft:sweet_berry_bush",
+          "minecraft:tall_seagrass",
+          "minecraft:torchflower_crop",
+          "minecraft:twisting_vines_plant",
+          "minecraft:weeping_vines_plant"
+        ]
+      },
+      "priceMode": "replace",
+      "sourceTransform": "map",
+      "notice": "Estado de crecimiento normalizado a su semilla o planta de origen.",
+      "sourceMap": {
+        "minecraft:attached_melon_stem": "minecraft:melon_seeds",
+        "minecraft:attached_pumpkin_stem": "minecraft:pumpkin_seeds",
+        "minecraft:bamboo_sapling": "minecraft:bamboo",
+        "minecraft:beetroots": "minecraft:beetroot_seeds",
+        "minecraft:big_dripleaf_stem": "minecraft:big_dripleaf",
+        "minecraft:carrots": "minecraft:carrot",
+        "minecraft:cave_vines": "minecraft:glow_berries",
+        "minecraft:cave_vines_plant": "minecraft:glow_berries",
+        "minecraft:cocoa": "minecraft:cocoa_beans",
+        "minecraft:kelp_plant": "minecraft:kelp",
+        "minecraft:melon_stem": "minecraft:melon_seeds",
+        "minecraft:pitcher_crop": "minecraft:pitcher_pod",
+        "minecraft:potatoes": "minecraft:potato",
+        "minecraft:pumpkin_stem": "minecraft:pumpkin_seeds",
+        "minecraft:sweet_berry_bush": "minecraft:sweet_berries",
+        "minecraft:tall_seagrass": "minecraft:seagrass",
+        "minecraft:torchflower_crop": "minecraft:torchflower_seeds",
+        "minecraft:twisting_vines_plant": "minecraft:twisting_vines",
+        "minecraft:weeping_vines_plant": "minecraft:weeping_vines"
+      },
+      "requirements": []
+    },
+    {
+      "id": "redstone_and_tripwire",
+      "classification": "derived",
+      "match": { "ids": ["minecraft:redstone_wire", "minecraft:tripwire"] },
+      "priceMode": "replace",
+      "sourceTransform": "map",
+      "notice": "Conexión redstone normalizada a su material de origen.",
+      "sourceMap": {
+        "minecraft:redstone_wire": "minecraft:redstone",
+        "minecraft:tripwire": "minecraft:string"
+      },
+      "requirements": []
+    },
+    {
+      "id": "infested_stone",
+      "classification": "derived",
+      "match": {
+        "ids": [
+          "minecraft:infested_stone",
+          "minecraft:infested_cobblestone",
+          "minecraft:infested_stone_bricks",
+          "minecraft:infested_mossy_stone_bricks",
+          "minecraft:infested_cracked_stone_bricks",
+          "minecraft:infested_chiseled_stone_bricks",
+          "minecraft:infested_deepslate"
+        ]
+      },
+      "priceMode": "replace",
+      "sourceTransform": "map",
+      "notice": "Piedra infestada normalizada a la variante sana.",
+      "sourceMap": {
+        "minecraft:infested_stone": "minecraft:stone",
+        "minecraft:infested_cobblestone": "minecraft:cobblestone",
+        "minecraft:infested_stone_bricks": "minecraft:stone_bricks",
+        "minecraft:infested_mossy_stone_bricks": "minecraft:mossy_stone_bricks",
+        "minecraft:infested_cracked_stone_bricks": "minecraft:cracked_stone_bricks",
+        "minecraft:infested_chiseled_stone_bricks": "minecraft:chiseled_stone_bricks",
+        "minecraft:infested_deepslate": "minecraft:deepslate"
+      },
+      "requirements": []
+    },
+    {
+      "id": "frogspawn",
+      "classification": "special",
+      "match": { "ids": ["minecraft:frogspawn"] },
+      "priceMode": "replace",
+      "notice": "Frogspawn permitido como decoración de ciclo de vida con coste alto provisional.",
+      "requirements": [
+        { "id": "minecraft:frogspawn", "count": 1 },
+        { "id": "minecraft:frog", "count": 2, "billable": false },
+        { "id": "minecraft:water", "count": 1, "billable": false }
+      ]
+    },
+    {
+      "id": "dragon_egg",
+      "classification": "special",
+      "match": { "ids": ["minecraft:dragon_egg"] },
+      "priceMode": "keep",
+      "notice": "Huevo de dragón permitido una sola vez por mundo; requiere comprobación manual en el servidor.",
+      "worldLimit": {
+        "scope": "world",
+        "maximum": 1,
+        "note": "El generador impide más de un huevo por paquete, pero no puede saber si el mundo ya tiene uno."
+      },
+      "requirements": []
+    }
+  ]
+}

@@ -3,6 +3,26 @@ export type MaterialCount = {
   count: number
 }
 
+export type PolicyDependency = {
+  id: string
+  count: number
+  billable: boolean
+}
+
+export type PolicyWorldLimit = {
+  id: string
+  count: number
+  maximum: number
+  scope: 'world'
+  note: string
+}
+
+export type PolicySummary = {
+  dependencies: PolicyDependency[]
+  notices: string[]
+  worldLimits: PolicyWorldLimit[]
+}
+
 export type ViewerPaletteEntry = {
   name: string
   color: string
@@ -28,6 +48,7 @@ export type StructureAnalysis = {
   stateCount: number
   materials: MaterialCount[]
   removed: MaterialCount[]
+  policy?: PolicySummary
   status: 'ready' | 'rejected'
   error?: string
 }

@@ -1,0 +1,68 @@
+{
+  "schemaVersion": 1,
+  "fixtures": [
+    {
+      "name": "barrier_denied",
+      "states": [{ "name": "minecraft:barrier", "properties": {} }],
+      "expect": { "decision": "reject", "contains": "minecraft:barrier" }
+    },
+    {
+      "name": "water_source_dependency",
+      "states": [{ "name": "minecraft:water", "properties": {} }],
+      "expect": {
+        "decision": "allow",
+        "dependencies": ["minecraft:water_bucket"],
+        "replaced": ["minecraft:water"]
+      }
+    },
+    {
+      "name": "waterlogged_stair_dependency",
+      "states": [
+        {
+          "name": "minecraft:oak_stairs",
+          "properties": { "waterlogged": "true" }
+        }
+      ],
+      "expect": {
+        "decision": "allow",
+        "dependencies": ["minecraft:water_bucket"],
+        "replaced": []
+      }
+    },
+    {
+      "name": "nether_portal_dependency",
+      "states": [{ "name": "minecraft:nether_portal", "properties": {} }],
+      "expect": {
+        "decision": "allow",
+        "dependencies": ["minecraft:obsidian", "minecraft:flint_and_steel"],
+        "replaced": ["minecraft:nether_portal"]
+      }
+    },
+    {
+      "name": "frogspawn_expensive_but_allowed",
+      "states": [{ "name": "minecraft:frogspawn", "properties": {} }],
+      "expect": {
+        "decision": "allow",
+        "dependencies": ["minecraft:frogspawn", "minecraft:frog"],
+        "replaced": ["minecraft:frogspawn"]
+      }
+    },
+    {
+      "name": "two_dragon_eggs_rejected",
+      "states": [
+        { "name": "minecraft:dragon_egg", "properties": {} },
+        { "name": "minecraft:dragon_egg", "properties": {} }
+      ],
+      "expect": { "decision": "reject", "contains": "máximo de 1" }
+    },
+    {
+      "name": "potted_plant_normalized",
+      "states": [{ "name": "minecraft:potted_fern", "properties": {} }],
+      "expect": {
+        "decision": "allow",
+        "dependencies": ["minecraft:flower_pot", "minecraft:fern"],
+        "replaced": ["minecraft:potted_fern"]
+      }
+    }
+  ]
+}

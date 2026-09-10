@@ -2,6 +2,7 @@ import { Search } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import {
   formatBlockPrice,
+  getBlockPricePoints,
   PRICE_CATALOG_BLOCK_COUNT,
   PRICE_CATALOG_GROUPS,
   PRICE_POINTS_PER_EMERALD,
@@ -19,6 +20,15 @@ function blockLabel(blockId: string) {
 function priceLabel(points: number) {
   if (points === 0) return 'Sin cobro'
   return formatBlockPrice(points) + ' esmeraldas'
+}
+
+function groupPriceLabel(blocks: readonly string[]) {
+  const prices = blocks.map(getBlockPricePoints)
+  const minimum = Math.min(...prices)
+  const maximum = Math.max(...prices)
+  return minimum === maximum
+    ? priceLabel(minimum)
+    : priceLabel(minimum) + ' – ' + priceLabel(maximum)
 }
 
 export function PriceCatalog({ assetFile }: { assetFile: File | null }) {
@@ -107,7 +117,7 @@ export function PriceCatalog({ assetFile }: { assetFile: File | null }) {
                 </span>
                 <span className="price-group-meta">
                   <span>{group.blocks.length.toLocaleString('es-CL')} bloques</span>
-                  <b>{priceLabel(group.points)}</b>
+                  <b>{groupPriceLabel(group.blocks)}</b>
                 </span>
               </summary>
               {open ? (
@@ -119,7 +129,7 @@ export function PriceCatalog({ assetFile }: { assetFile: File | null }) {
                         <strong>{blockLabel(blockId)}</strong>
                         <small>{blockId}</small>
                       </span>
-                      <b>{priceLabel(group.points)}</b>
+                      <b>{priceLabel(getBlockPricePoints(blockId))}</b>
                     </div>
                   ))}
                 </div>

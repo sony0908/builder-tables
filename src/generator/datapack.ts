@@ -3,6 +3,7 @@ import { prepareStructures } from './nbt'
 import { addControllerAssets } from './controller'
 import { addDynamicAssets } from './dynamics'
 import { addPreviewFiles } from './preview'
+import { SURVIVAL_POLICY_METADATA } from './survival-policy'
 import type { StructureAnalysis, WorkerStructureInput } from './types'
 
 type GeneratedArchive = {
@@ -61,6 +62,16 @@ export async function generateArchive(
     })
   })
 
+  putJson('builder_tables_survival_policy_26_2.json', {
+    ...SURVIVAL_POLICY_METADATA,
+    structures: structures.map(({ analysis }) => ({
+      id: analysis.id,
+      name: analysis.name,
+      price: analysis.price,
+      policy: analysis.policy,
+    })),
+  })
+
   addControllerAssets(put, putJson, structures)
   addDynamicAssets(put, structures)
   addPreviewFiles(put, structures)
@@ -86,7 +97,25 @@ export async function generateArchive(
             ' x ' +
             removed.count,
         ),
-
+        ...(analysis.policy?.dependencies ?? []).map(
+          (dependency) =>
+            '  dependencia survival: ' +
+            dependency.id +
+            ' x ' +
+            dependency.count +
+            (dependency.billable ? '' : ' (informativa)'),
+        ),
+        ...(analysis.policy?.worldLimits ?? []).map(
+          (limit) =>
+            '  límite ' +
+            limit.scope +
+            ': ' +
+            limit.id +
+            ' x ' +
+            limit.count +
+            '/' +
+            limit.maximum,
+        ),
       ]
     }),
     '',

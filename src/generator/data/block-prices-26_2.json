@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "minecraftVersion": "26.2",
+  "pointsPerEmerald": 10,
+  "overrides": [
+    {
+      "id": "minecraft:frogspawn",
+      "points": 400,
+      "label": "Decoración de ciclo de vida: coste provisional alto"
+    },
+    { "id": "minecraft:water_bucket", "points": 2 },
+    { "id": "minecraft:lava_bucket", "points": 8 },
+    { "id": "minecraft:powder_snow_bucket", "points": 5 },
+    { "id": "minecraft:cauldron", "points": 6 },
+    { "id": "minecraft:flower_pot", "points": 2 },
+    { "id": "minecraft:flint_and_steel", "points": 6 },
+    { "id": "minecraft:glow_berries", "points": 3 },
+    { "id": "minecraft:torchflower_seeds", "points": 5 },
+    { "id": "minecraft:pitcher_pod", "points": 5 }
+  ]
+}

@@ -7,7 +7,14 @@ import type {
   WorkerStructureInput,
 } from './types'
 import { splitStructureRegions, type StructureSize } from './geometry'
+import { VANILLA_BLOCK_IDS_26_2 } from './vanilla-blocks-26_2'
 import { calculateStructurePrice } from './pricing'
+import {
+  applyPolicyItem,
+  applyPolicyState,
+  createPolicyAccumulator,
+  finalizePolicy,
+} from './survival-policy'
 
 const AIR_BLOCKS = new Set([
   'minecraft:air',
@@ -19,6 +26,7 @@ const AIR_BLOCKS = new Set([
 const UNSUPPORTED_26_2 = new Set([
   'minecraft:dark_oak_wall_hanging_sign',
 ])
+const VANILLA_BLOCK_IDS = new Set<string>(VANILLA_BLOCK_IDS_26_2)
 
 export type BlockState = {
   name: string
@@ -96,6 +104,106 @@ function asList(value: unknown, message: string): NbtList {
   return value as NbtList
 }
 
+
+const ITEM_STACK_FIELDS = new Set([
+  'Item',
+  'item',
+  'Items',
+  'items',
+  'Inventory',
+  'inventory',
+  'HandItems',
+  'ArmorItems',
+  'OffHandItem',
+  'SaddleItem',
+  'DecorItem',
+  'RecordItem',
+  'Book',
+  'book',
+  'Container',
+  'container',
+  'ChargedProjectiles',
+  'minecraft:container',
+  'minecraft:bundle_contents',
+  'minecraft:charged_projectiles',
+])
+
+function isNbtRecord(value: unknown): value is NbtRecord {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value)
+}
+
+function itemStackCount(record: NbtRecord, location: string) {
+  const rawCount = Object.hasOwn(record, 'count')
+    ? record.count
+    : Object.hasOwn(record, 'Count')
+      ? record.Count
+      : 1
+  const count = Number(rawCount)
+
+  if (!Number.isSafeInteger(count) || count < 1) {
+    return {
+      error: 'El ítem de ' + location + ' tiene una cantidad inválida.',
+    }
+  }
+
+  return { count }
+}
+
+export function validateEmbeddedItemsForPolicy(
+  value: unknown,
+  location: string,
+  accumulator: ReturnType<typeof createPolicyAccumulator>,
+) {
+  const seen = new WeakSet<object>()
+
+  function walk(
+    current: unknown,
+    parentKey: string | undefined,
+    depth: number,
+  ): string | undefined {
+    if (depth > 64) {
+      return 'El NBT interno supera la profundidad permitida en ' + location + '.'
+    }
+
+    if (Array.isArray(current)) {
+      for (const child of current) {
+        const error = walk(child, parentKey, depth + 1)
+        if (error) return error
+      }
+      return undefined
+    }
+
+    if (!isNbtRecord(current)) return undefined
+    if (seen.has(current)) return undefined
+    seen.add(current)
+
+    if (
+      parentKey &&
+      ITEM_STACK_FIELDS.has(parentKey) &&
+      typeof current.id === 'string'
+    ) {
+      const parsedCount = itemStackCount(current, location)
+      if ('error' in parsedCount) return parsedCount.error
+
+      const error = applyPolicyItem(
+        accumulator,
+        current.id,
+        parsedCount.count,
+        location,
+      )
+      if (error) return error
+    }
+
+    for (const [key, child] of Object.entries(current)) {
+      const error = walk(child, key, depth + 1)
+      if (error) return error
+    }
+
+    return undefined
+  }
+
+  return walk(value, undefined, 0)
+}
 function withListType<T>(items: T[], source: unknown) {
   const sourceType =
     (source as { [TAG_TYPE]?: TagType })[TAG_TYPE] ?? TAG.COMPOUND
@@ -141,10 +249,7 @@ function stateKey(state: BlockState) {
 }
 
 function shouldRemoveState(state: BlockState) {
-  return (
-    !AIR_BLOCKS.has(state.name) &&
-    (UNSUPPORTED_26_2.has(state.name) || !state.name.startsWith('minecraft:'))
-  )
+  return UNSUPPORTED_26_2.has(state.name) || !VANILLA_BLOCK_IDS.has(state.name)
 }
 function parseMetadata(input: WorkerStructureInput) {
   const fallbackName = sourceStem(input.sourceName)
@@ -356,6 +461,7 @@ async function processInput(
   const removed = new Map<string, number>()
   const viewerPositions: number[] = []
   const viewerStates: number[] = []
+  const policyAccumulator = createPolicyAccumulator()
 
   for (const rawBlock of oldBlocks) {
     const block = asRecord(
@@ -380,6 +486,9 @@ async function processInput(
       continue
     }
 
+    const policyError = applyPolicyState(policyAccumulator, sourceState)
+    if (policyError) throw new Error(policyError)
+
     if (AIR_BLOCKS.has(sourceState.name)) continue
 
     const key = stateKey(sourceState)
@@ -399,6 +508,42 @@ async function processInput(
     viewerPositions.push(position[0], position[1], position[2])
     viewerStates.push(newId)
   }
+  for (const { block, position } of keptBlocks) {
+    if (block.nbt === undefined) continue
+
+    const error = validateEmbeddedItemsForPolicy(
+      block.nbt,
+      'la entidad de bloque en [' + position.join(', ') + ']',
+      policyAccumulator,
+    )
+    if (error) throw new Error(error)
+  }
+
+  if (root.entities !== undefined) {
+    const entities = asList(
+      root.entities,
+      'La lista de entidades de la estructura es inválida.',
+    )
+
+    for (const [index, rawEntity] of entities.entries()) {
+      const entity = asRecord(
+        rawEntity,
+        'La lista de entidades contiene una entrada inválida.',
+      )
+      if (entity.nbt === undefined) continue
+
+      const error = validateEmbeddedItemsForPolicy(
+        entity.nbt,
+        'la entidad #' + index,
+        policyAccumulator,
+      )
+      if (error) throw new Error(error)
+    }
+  }
+
+  const policy = finalizePolicy(policyAccumulator)
+  if (policy.error) throw new Error(policy.error)
+
   const filteredPalette = palette.length
     ? palette
     : [{ Name: 'minecraft:air' }]
@@ -428,7 +573,7 @@ async function processInput(
   const materialCounts = [...materials.entries()]
     .map(([name, count]) => ({ name, count }))
     .sort((left, right) => right.count - left.count)
-  const automaticPrice = calculateStructurePrice(materialCounts)
+  const automaticPrice = calculateStructurePrice(materialCounts, policy.pricing)
 
   const analysis: StructureAnalysis = {
     key: input.key,
@@ -443,6 +588,7 @@ async function processInput(
     removed: [...removed.entries()]
       .map(([name, count]) => ({ name, count }))
       .sort((left, right) => left.name.localeCompare(right.name)),
+    policy: policy.summary,
     status: 'ready',
   }
 
@@ -511,6 +657,49 @@ async function processInput(
   }
 }
 
+function enforcePackageWorldLimits(results: ProcessedStructure[]): ProcessedStructure[] {
+  const totals = new Map<string, { count: number; maximum: number }>()
+
+  results.forEach((result) => {
+    result.analysis.policy?.worldLimits.forEach((limit) => {
+      const current = totals.get(limit.id)
+      totals.set(limit.id, {
+        count: (current?.count ?? 0) + limit.count,
+        maximum: limit.maximum,
+      })
+    })
+  })
+
+  const exceeded = new Map(
+    [...totals.entries()].filter(([, limit]) => limit.count > limit.maximum),
+  )
+  if (!exceeded.size) return results
+
+  return results.map((result): ProcessedStructure => {
+    const limit = result.analysis.policy?.worldLimits.find((entry) =>
+      exceeded.has(entry.id),
+    )
+    if (!limit) return result
+
+    const total = exceeded.get(limit.id)
+    if (!total) return result
+
+    return {
+      analysis: {
+        ...result.analysis,
+        status: 'rejected',
+        error:
+          'El paquete contiene ' +
+          total.count +
+          ' × ' +
+          limit.id +
+          '; la política permite un máximo de ' +
+          total.maximum +
+          ' por mundo.',
+      },
+    }
+  })
+}
 async function processInputs(
   inputs: WorkerStructureInput[],
   includeTemplates: boolean,
@@ -520,7 +709,7 @@ async function processInputs(
 
   ids.forEach((id) => counts.set(id, (counts.get(id) ?? 0) + 1))
 
-  return Promise.all(
+  const results = await Promise.all(
     inputs.map(async (input, index) => {
       const id = ids[index]
       if ((counts.get(id) ?? 0) > 1) {
@@ -542,6 +731,8 @@ async function processInputs(
       }
     }),
   )
+
+  return enforcePackageWorldLimits(results)
 }
 
 export async function analyzeInputs(
@@ -552,7 +743,7 @@ export async function analyzeInputs(
   return {
     structures: results.map((result) => result.analysis),
     viewerModels: results.flatMap((result) =>
-      result.viewer ? [result.viewer] : [],
+      result.analysis.status === 'ready' && result.viewer ? [result.viewer] : [],
     ),
   }
 }
