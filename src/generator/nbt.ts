@@ -149,6 +149,20 @@ function itemStackCount(record: NbtRecord, location: string) {
   return { count }
 }
 
+function multipliedItemStackCount(
+  count: number,
+  multiplier: number,
+  location: string,
+) {
+  const total = count * multiplier
+  if (!Number.isSafeInteger(total) || total < 1) {
+    return {
+      error: 'El contenido de ítems supera la cantidad permitida en ' + location + '.',
+    }
+  }
+  return { count: total }
+}
+
 export function validateEmbeddedItemsForPolicy(
   value: unknown,
   location: string,
@@ -160,6 +174,7 @@ export function validateEmbeddedItemsForPolicy(
     current: unknown,
     parentKey: string | undefined,
     depth: number,
+    multiplier: number,
   ): string | undefined {
     if (depth > 64) {
       return 'El NBT interno supera la profundidad permitida en ' + location + '.'
@@ -167,7 +182,7 @@ export function validateEmbeddedItemsForPolicy(
 
     if (Array.isArray(current)) {
       for (const child of current) {
-        const error = walk(child, parentKey, depth + 1)
+        const error = walk(child, parentKey, depth + 1, multiplier)
         if (error) return error
       }
       return undefined
@@ -177,6 +192,7 @@ export function validateEmbeddedItemsForPolicy(
     if (seen.has(current)) return undefined
     seen.add(current)
 
+    let childMultiplier = multiplier
     if (
       parentKey &&
       ITEM_STACK_FIELDS.has(parentKey) &&
@@ -185,25 +201,34 @@ export function validateEmbeddedItemsForPolicy(
       const parsedCount = itemStackCount(current, location)
       if ('error' in parsedCount) return parsedCount.error
 
+      const totalCount = multipliedItemStackCount(
+        parsedCount.count,
+        multiplier,
+        location,
+      )
+      if ('error' in totalCount) return totalCount.error
+
       const error = applyPolicyItem(
         accumulator,
         current.id,
-        parsedCount.count,
+        totalCount.count,
         location,
       )
       if (error) return error
+      childMultiplier = totalCount.count
     }
 
     for (const [key, child] of Object.entries(current)) {
-      const error = walk(child, key, depth + 1)
+      const error = walk(child, key, depth + 1, childMultiplier)
       if (error) return error
     }
 
     return undefined
   }
 
-  return walk(value, undefined, 0)
+  return walk(value, undefined, 0, 1)
 }
+
 function withListType<T>(items: T[], source: unknown) {
   const sourceType =
     (source as { [TAG_TYPE]?: TagType })[TAG_TYPE] ?? TAG.COMPOUND
@@ -254,7 +279,6 @@ function shouldRemoveState(state: BlockState) {
 function parseMetadata(input: WorkerStructureInput) {
   const fallbackName = sourceStem(input.sourceName)
   let name = fallbackName
-  let price: number | undefined
 
   if (input.metadataText) {
     let metadata: unknown
@@ -270,16 +294,9 @@ function parseMetadata(input: WorkerStructureInput) {
     )
 
     if (Object.hasOwn(object, 'price')) {
-      if (
-        typeof object.price !== 'number' ||
-        !Number.isInteger(object.price) ||
-        object.price < 0
-      ) {
-        throw new Error(
-          'El campo price del JSON debe ser un entero no negativo.',
-        )
-      }
-      price = object.price
+      throw new Error(
+        'El precio manual ya no se admite; quita el campo price del JSON asociado.',
+      )
     }
 
     if (Object.hasOwn(object, 'name')) {
@@ -289,7 +306,6 @@ function parseMetadata(input: WorkerStructureInput) {
 
   return {
     name: input.nameOverride?.trim() || name,
-    price,
   }
 }
 
@@ -582,7 +598,7 @@ async function processInput(
     name: metadata.name,
     size,
     count: keptBlocks.length,
-    price: metadata.price ?? automaticPrice,
+    price: automaticPrice,
     stateCount: used.size,
     materials: materialCounts,
     removed: [...removed.entries()]

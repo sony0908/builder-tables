@@ -7,6 +7,7 @@ import {
   PRICE_CATALOG_GROUPS,
   PRICE_POINTS_PER_EMERALD,
 } from '../generator/pricing'
+import { isSurvivalDeniedId } from '../generator/survival-policy'
 import { BlockPriceIcon } from './BlockPriceIcon'
 import './PriceCatalog.css'
 
@@ -23,12 +24,20 @@ function priceLabel(points: number) {
 }
 
 function groupPriceLabel(blocks: readonly string[]) {
-  const prices = blocks.map(getBlockPricePoints)
+  const permitted = blocks.filter((blockId) => !isSurvivalDeniedId(blockId))
+  const denied = blocks.length - permitted.length
+  if (!permitted.length) return 'No permitido'
+
+  const prices = permitted.map(getBlockPricePoints)
   const minimum = Math.min(...prices)
   const maximum = Math.max(...prices)
-  return minimum === maximum
+  const price = minimum === maximum
     ? priceLabel(minimum)
     : priceLabel(minimum) + ' – ' + priceLabel(maximum)
+
+  return denied
+    ? price + ' · ' + denied + ' no permitido' + (denied === 1 ? '' : 's')
+    : price
 }
 
 export function PriceCatalog({ assetFile }: { assetFile: File | null }) {
@@ -95,11 +104,10 @@ export function PriceCatalog({ assetFile }: { assetFile: File | null }) {
           />
         </label>
         <p className="price-catalog-note">
-          Un <code>price</code> en el JSON de una construcción sustituye este
-          cálculo solo para esa construcción.
+          El precio se calcula automáticamente. El JSON asociado solo puede
+          aportar el nombre; un campo <code>price</code> se rechaza.
         </p>
       </div>
-
       <div className="price-groups">
         {groups.map((group) => {
           const open = normalizedQuery.length > 0 || openGroups.includes(group.id)
@@ -129,7 +137,11 @@ export function PriceCatalog({ assetFile }: { assetFile: File | null }) {
                         <strong>{blockLabel(blockId)}</strong>
                         <small>{blockId}</small>
                       </span>
-                      <b>{priceLabel(getBlockPricePoints(blockId))}</b>
+                      <b>
+                        {isSurvivalDeniedId(blockId)
+                          ? 'No permitido'
+                          : priceLabel(getBlockPricePoints(blockId))}
+                      </b>
                     </div>
                   ))}
                 </div>

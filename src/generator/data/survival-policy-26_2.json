@@ -27,7 +27,12 @@
     { "id": "minecraft:test_instance_block", "reason": "Bloque de pruebas." },
     { "id": "minecraft:trial_spawner", "reason": "No se puede obtener ni mover en survival." },
     { "id": "minecraft:vault", "reason": "No se puede mover en survival." },
-    { "id": "minecraft:frosted_ice", "reason": "Estado temporal no conservable." }
+    { "id": "minecraft:frosted_ice", "reason": "Estado temporal no conservable." },
+    { "id": "minecraft:dragon_egg", "reason": "No se permite en construcciones generadas: el mundo solo ofrece uno." },
+    { "id": "minecraft:debug_stick", "reason": "Herramienta exclusiva de Creative." },
+    { "id": "minecraft:knowledge_book", "reason": "Ítem técnico de comandos." },
+    { "id": "minecraft:command_block_minecart", "reason": "Vehículo de operador no obtenible en survival." },
+    { "id": "minecraft:spawner_minecart", "reason": "Vehículo no obtenible en survival." }
   ],
   "rules": [
     {
@@ -114,9 +119,8 @@
       "classification": "dependency",
       "match": { "ids": ["minecraft:nether_portal"] },
       "priceMode": "replace",
-      "notice": "Portal del Nether declarado con obsidiana y activación; el encendido se cobra una vez por plano.",
+      "notice": "Portal del Nether declarado solo con activación; la obsidiana del marco ya se cobra como bloque de la construcción.",
       "requirements": [
-        { "id": "minecraft:obsidian", "count": 1 },
         { "id": "minecraft:flint_and_steel", "count": 1, "scope": "structure" }
       ]
     },
@@ -270,25 +274,12 @@
       "classification": "special",
       "match": { "ids": ["minecraft:frogspawn"] },
       "priceMode": "replace",
-      "notice": "Frogspawn permitido como decoración de ciclo de vida con coste alto provisional.",
+      "notice": "Frogspawn permitido como decoración de ciclo de vida excepcional: 64 esmeraldas por unidad.",
       "requirements": [
         { "id": "minecraft:frogspawn", "count": 1 },
         { "id": "minecraft:frog", "count": 2, "billable": false },
         { "id": "minecraft:water", "count": 1, "billable": false }
       ]
-    },
-    {
-      "id": "dragon_egg",
-      "classification": "special",
-      "match": { "ids": ["minecraft:dragon_egg"] },
-      "priceMode": "keep",
-      "notice": "Huevo de dragón permitido una sola vez por mundo; requiere comprobación manual en el servidor.",
-      "worldLimit": {
-        "scope": "world",
-        "maximum": 1,
-        "note": "El generador impide más de un huevo por paquete, pero no puede saber si el mundo ya tiene uno."
-      },
-      "requirements": []
     }
   ]
 }

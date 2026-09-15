@@ -14,31 +14,45 @@ export type PriceCatalogGroup = {
 }
 
 type PriceRule = Omit<PriceCatalogGroup, 'blocks'> & {
-  matches: (blockId: string) => boolean
+  matches: (id: string) => boolean
 }
 
 type CountedMaterial = { name: string; count: number }
-type PriceOverride = { id: string; points: number }
+type PriceOverride = { id: string; points: number; label?: string }
 type PriceData = {
   pointsPerEmerald: number
   overrides: PriceOverride[]
 }
 
-const pathOf = (blockId: string) => blockId.replace(/^minecraft:/, '')
+const pathOf = (id: string) => id.replace(/^minecraft:/, '')
 const has = (value: string, pattern: RegExp) => pattern.test(value)
 const technical = new Set(['air', 'cave_air', 'void_air', 'structure_void'])
 const special = new Set([
   'beacon',
   'conduit',
   'dragon_egg',
+  'dragon_head',
+  'dragon_wall_head',
+  'elytra',
+  'enchanted_golden_apple',
   'end_portal_frame',
   'frogspawn',
+  'heart_of_the_sea',
   'heavy_core',
   'lodestone',
+  'mace',
+  'nautilus_shell',
+  'nether_star',
   'respawn_anchor',
+  'shulker_shell',
+  'sniffer_egg',
   'spawner',
+  'totem_of_undying',
   'trial_spawner',
+  'trident',
+  'turtle_egg',
   'vault',
+  'wither_skeleton_skull',
 ])
 const configuredPriceData = priceData as PriceData
 
@@ -62,15 +76,15 @@ const PRICE_RULES: readonly PriceRule[] = [
   {
     id: 'special',
     label: 'Especiales y de estructura',
-    description: 'Botín, exploración o progreso avanzado.',
-    points: 30,
+    description: 'Trofeos, exploración o progreso avanzado.',
+    points: 50,
     matches: (id) => special.has(pathOf(id)),
   },
   {
     id: 'rare',
     label: 'Minerales raros',
     description: 'Diamante, esmeralda, netherita, amatista y equivalentes.',
-    points: 12,
+    points: 20,
     matches: (id) =>
       has(pathOf(id), /diamond|emerald|netherite|ancient_debris|amethyst|ender_chest|shulker_box|gilded_blackstone/),
   },
@@ -78,7 +92,7 @@ const PRICE_RULES: readonly PriceRule[] = [
     id: 'redstone',
     label: 'Minerales y redstone',
     description: 'Metales, circuitos, raíles y automatización.',
-    points: 6,
+    points: 10,
     matches: (id) =>
       has(pathOf(id), /redstone|copper|iron|gold|lapis|coal|piston|observer|hopper|dispenser|dropper|comparator|repeater|daylight_detector|lightning_rod|sculk_sensor|note_block|jukebox|target|tripwire|crafter|rail/),
   },
@@ -86,15 +100,15 @@ const PRICE_RULES: readonly PriceRule[] = [
     id: 'nether_end',
     label: 'Nether y End',
     description: 'Otras dimensiones y Deep Dark.',
-    points: 5,
+    points: 8,
     matches: (id) =>
-      has(pathOf(id), /nether|crimson|warped|basalt|blackstone|netherrack|soul_|glowstone|magma|quartz|chorus|purpur|end_stone|obsidian|sculk|resin/),
+      has(pathOf(id), /nether|crimson|warped|basalt|blackstone|netherrack|soul_|glowstone|magma|quartz|chorus|purpur|end_stone|ender|obsidian|sculk|resin/),
   },
   {
     id: 'wood',
     label: 'Madera y estaciones',
     description: 'Maderas, bambú, muebles y bloques de trabajo.',
-    points: 2,
+    points: 3,
     matches: (id) =>
       has(pathOf(id), /oak|spruce|birch|jungle|acacia|mangrove|cherry|bamboo|log|wood|planks|bookshelf|lectern|barrel|chest|crafting_table|cartography_table|fletching_table|smithing_table|loom|composter|ladder|scaffolding/),
   },
@@ -102,7 +116,7 @@ const PRICE_RULES: readonly PriceRule[] = [
     id: 'construction',
     label: 'Construcción y decoración',
     description: 'Vidrio, colores, piedra trabajada, iluminación y detalles.',
-    points: 3,
+    points: 5,
     matches: (id) =>
       has(pathOf(id), /glass|wool|carpet|terracotta|concrete|brick|tile|polished|chiseled|smooth_|cut_|slab|stairs|wall|fence|door|trapdoor|bed|banner|candle|lantern|torch|coral|flower|pot|chain|grindstone|stonecutter/),
   },
@@ -151,8 +165,18 @@ export const PRICE_CATALOG_GROUPS: readonly PriceCatalogGroup[] = DISPLAY_ORDER.
 
 export const PRICE_CATALOG_BLOCK_COUNT = VANILLA_BLOCK_IDS_26_2.length
 
+/** Uses the same category rules for blocks and permitted vanilla inventory items. */
+export function getPricePoints(id: string) {
+  return (
+    overriddenPoints.get(id) ??
+    groupForBlock.get(id)?.points ??
+    PRICE_RULES.find((rule) => rule.matches(id))?.points ??
+    1
+  )
+}
+
 export function getBlockPricePoints(blockId: string) {
-  return overriddenPoints.get(blockId) ?? groupForBlock.get(blockId)?.points ?? 1
+  return getPricePoints(blockId)
 }
 
 export function calculateStructurePrice(
@@ -167,17 +191,24 @@ export function calculateStructurePrice(
       0,
       Math.trunc(material.count) - (replaced.get(material.name) ?? 0),
     )
-    return total + count * getBlockPricePoints(material.name)
+    return total + count * getPricePoints(material.name)
   }, 0)
   const dependencyPoints = (policyPricing?.dependencies ?? []).reduce(
     (total, dependency) =>
       total +
-      Math.max(0, Math.trunc(dependency.count)) *
-        getBlockPricePoints(dependency.name),
+      Math.max(0, Math.trunc(dependency.count)) * getPricePoints(dependency.name),
+    0,
+  )
+  const embeddedItemPoints = (policyPricing?.embeddedItems ?? []).reduce(
+    (total, item) =>
+      total + Math.max(0, Math.trunc(item.count)) * getPricePoints(item.name),
     0,
   )
 
-  return Math.ceil((materialPoints + dependencyPoints) / PRICE_POINTS_PER_EMERALD)
+  return Math.ceil(
+    (materialPoints + dependencyPoints + embeddedItemPoints) /
+      PRICE_POINTS_PER_EMERALD,
+  )
 }
 
 export function formatBlockPrice(points: number) {

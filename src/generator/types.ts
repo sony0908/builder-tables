@@ -19,6 +19,8 @@ export type PolicyWorldLimit = {
 
 export type PolicySummary = {
   dependencies: PolicyDependency[]
+  /** Objetos internos que se entregan junto a la construcción y se cobran. */
+  embeddedItems: MaterialCount[]
   notices: string[]
   worldLimits: PolicyWorldLimit[]
 }

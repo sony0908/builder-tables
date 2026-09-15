@@ -639,7 +639,7 @@ function App() {
                 <h2>Añade tus estructuras</h2>
                 <p>
                   Selecciona NBT de Minecraft Java y, opcionalmente, un JSON
-                  con el mismo nombre para fijar el título o sobrescribir el precio.
+                  con el mismo nombre para fijar el título de la construcción.
                 </p>
               </div>
             </div>
@@ -659,7 +659,7 @@ function App() {
               </span>
               <strong>Arrastra tus archivos .nbt aquí</strong>
               <span>
-                Puedes añadir un .json del mismo nombre para un título o precio manual.
+                Puedes añadir un .json del mismo nombre para un título personalizado.
               </span>
               <button
                 className="secondary-button"
@@ -916,6 +916,16 @@ function App() {
                                 ' × ' +
                                 dependency.count +
                                 (dependency.billable ? '' : ' (informativa)'),
+                            )
+                            .join(', ')}
+                        </div>
+                      ) : null}
+                      {analysis?.status === 'ready' && analysis.policy?.embeddedItems.length ? (
+                        <div className="removed-blocks-note">
+                          Contenido incluido y cobrado:{' '}
+                          {analysis.policy.embeddedItems
+                            .map(
+                              (item) => item.name + ' × ' + item.count,
                             )
                             .join(', ')}
                         </div>

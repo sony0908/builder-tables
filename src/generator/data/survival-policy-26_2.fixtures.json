@@ -30,11 +30,12 @@
       }
     },
     {
-      "name": "nether_portal_dependency",
+      "name": "nether_portal_activation_only",
       "states": [{ "name": "minecraft:nether_portal", "properties": {} }],
       "expect": {
         "decision": "allow",
-        "dependencies": ["minecraft:obsidian", "minecraft:flint_and_steel"],
+        "dependencies": ["minecraft:flint_and_steel"],
+        "notDependencies": ["minecraft:obsidian"],
         "replaced": ["minecraft:nether_portal"]
       }
     },
@@ -48,12 +49,9 @@
       }
     },
     {
-      "name": "two_dragon_eggs_rejected",
-      "states": [
-        { "name": "minecraft:dragon_egg", "properties": {} },
-        { "name": "minecraft:dragon_egg", "properties": {} }
-      ],
-      "expect": { "decision": "reject", "contains": "máximo de 1" }
+      "name": "dragon_egg_denied",
+      "states": [{ "name": "minecraft:dragon_egg", "properties": {} }],
+      "expect": { "decision": "reject", "contains": "minecraft:dragon_egg" }
     },
     {
       "name": "potted_plant_normalized",

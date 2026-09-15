@@ -105,6 +105,13 @@ export async function generateArchive(
             dependency.count +
             (dependency.billable ? '' : ' (informativa)'),
         ),
+        ...(analysis.policy?.embeddedItems ?? []).map(
+          (item) =>
+            '  contenido incluido y cobrado: ' +
+            item.name +
+            ' x ' +
+            item.count,
+        ),
         ...(analysis.policy?.worldLimits ?? []).map(
           (limit) =>
             '  límite ' +

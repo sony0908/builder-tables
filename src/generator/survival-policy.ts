@@ -59,6 +59,7 @@ export type PolicyBlockState = {
 export type PolicyPricing = {
   replacements: MaterialCount[]
   dependencies: MaterialCount[]
+  embeddedItems: MaterialCount[]
 }
 
 export type PolicyEvaluation = {
@@ -71,6 +72,7 @@ type PolicyAccumulator = {
   dependencies: Map<string, PolicyDependency>
   priceDependencies: Map<string, number>
   replacements: Map<string, number>
+  embeddedItems: Map<string, number>
   notices: Set<string>
   worldLimits: Map<string, PolicyWorldLimit>
   structureRequirements: Set<string>
@@ -78,6 +80,10 @@ type PolicyAccumulator = {
 
 const policy = policyData as SurvivalPolicyData
 const deniedById = new Map(policy.deny.map((entry) => [entry.id, entry.reason]))
+
+export function isSurvivalDeniedId(id: string) {
+  return deniedById.has(id)
+}
 
 export const SURVIVAL_POLICY_METADATA = {
   schemaVersion: policy.schemaVersion,
@@ -149,7 +155,8 @@ function addRequirement(
   requirement: PolicyRequirement,
 ) {
   const scope = requirement.scope ?? 'block'
-  const key = rule.id + ':' + requirement.id
+  const key =
+    scope === 'structure' ? requirement.id : rule.id + ':' + requirement.id
 
   if (scope === 'structure') {
     if (accumulator.structureRequirements.has(key)) return
@@ -178,6 +185,7 @@ export function createPolicyAccumulator(): PolicyAccumulator {
     dependencies: new Map(),
     priceDependencies: new Map(),
     replacements: new Map(),
+    embeddedItems: new Map(),
     notices: new Set(),
     worldLimits: new Map(),
     structureRequirements: new Set(),
@@ -225,6 +233,7 @@ export function applyPolicyItem(
     })
   }
 
+  addCount(accumulator.embeddedItems, id, count)
   return undefined
 }
 export function applyPolicyState(
@@ -283,12 +292,14 @@ export function finalizePolicy(
       dependencies: [...accumulator.dependencies.values()].sort((left, right) =>
         left.id.localeCompare(right.id),
       ),
+      embeddedItems: materialCounts(accumulator.embeddedItems),
       notices: [...accumulator.notices].toSorted(),
       worldLimits,
     },
     pricing: {
       replacements: materialCounts(accumulator.replacements),
       dependencies: materialCounts(accumulator.priceDependencies),
+      embeddedItems: materialCounts(accumulator.embeddedItems),
     },
     error: exceeded
       ? 'El NBT contiene ' +
