@@ -152,6 +152,27 @@
   margin-top: 4px;
 }
 
+.ai-sliders {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  background: var(--input-bg, #f9fafb);
+  border: 1px solid var(--border-color, #e5e7eb);
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.theme-dark .ai-sliders {
+  background: #27272a;
+  border-color: #3f3f46;
+}
+
+.ai-sliders input[type="range"] {
+  width: 100%;
+  padding: 0;
+  accent-color: #007acc;
+}
+
 .ai-alert {
   display: flex;
   align-items: center;
