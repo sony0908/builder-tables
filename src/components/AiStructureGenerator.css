@@ -84,7 +84,8 @@
 }
 
 .ai-field-group input,
-.ai-field-group textarea {
+.ai-field-group textarea,
+.ai-field-group select {
   width: 100%;
   padding: 10px 12px;
   border-radius: 8px;
@@ -97,7 +98,8 @@
 }
 
 .theme-dark .ai-field-group input,
-.theme-dark .ai-field-group textarea {
+.theme-dark .ai-field-group textarea,
+.theme-dark .ai-field-group select {
   background: #27272a;
   border-color: #3f3f46;
   color: #f4f4f5;

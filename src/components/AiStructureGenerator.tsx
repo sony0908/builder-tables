@@ -12,6 +12,7 @@ export function AiStructureGenerator({ onStructureGenerated }: AiStructureGenera
   
   // Gemini Vision settings
   const [geminiKey, setGeminiKey] = useState(() => localStorage.getItem('builder-tables-gemini-key') || '')
+  const [geminiModel, setGeminiModel] = useState(() => localStorage.getItem('builder-tables-gemini-model') || 'gemini-3.6-flash')
   const [selectedImage, setSelectedImage] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
   const [visionPrompt, setVisionPrompt] = useState('Analiza esta construcción de Minecraft de la imagen. Traduce su diseño a una matriz 3D simplificada (máx 16x16x16). Devuelve estrictamente un JSON con "dimensiones": [x, y, z] y "estructura": [capas Y de matrices 2D con nombres de bloques de Minecraft, ej: minecraft:white_concrete, minecraft:glass]. Solo JSON puro sin markdown.')
@@ -65,10 +66,11 @@ export function AiStructureGenerator({ onStructureGenerated }: AiStructureGenera
 
     try {
       localStorage.setItem('builder-tables-gemini-key', geminiKey)
+      localStorage.setItem('builder-tables-gemini-model', geminiModel)
       const base64Image = await fileToBase64(selectedImage)
       const mimeType = selectedImage.type || 'image/jpeg'
 
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`, {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${geminiKey}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -77,14 +79,18 @@ export function AiStructureGenerator({ onStructureGenerated }: AiStructureGenera
               parts: [
                 { text: visionPrompt },
                 {
-                  inline_data: {
-                    mime_type: mimeType,
+                  inlineData: {
+                    mimeType: mimeType,
                     data: base64Image
                   }
                 }
               ]
             }
-          ]
+          ],
+          generationConfig: {
+            responseMimeType: 'application/json',
+            temperature: 0.2
+          }
         })
       })
 
@@ -238,6 +244,21 @@ export function AiStructureGenerator({ onStructureGenerated }: AiStructureGenera
                 placeholder="AIzaSy..."
               />
               <small className="ai-hint">Tu clave se guarda únicamente en el almacenamiento local de tu navegador.</small>
+            </div>
+
+            <div className="ai-field-group">
+              <label htmlFor="gemini-model">Modelo (gratuitos):</label>
+              <select
+                id="gemini-model"
+                value={geminiModel}
+                onChange={(e) => setGeminiModel(e.target.value)}
+              >
+                <option value="gemini-3.6-flash">gemini-3.6-flash (recomendado)</option>
+                <option value="gemini-flash-latest">gemini-flash-latest (siempre vigente)</option>
+                <option value="gemini-2.5-flash">gemini-2.5-flash (alternativa gratuita)</option>
+                <option value="gemini-3.5-flash-lite">gemini-3.5-flash-lite (rápido / económico)</option>
+              </select>
+              <small className="ai-hint">Si un modelo da error 404 (retirado), cambia a gemini-flash-latest.</small>
             </div>
 
             <div className="ai-field-group">
