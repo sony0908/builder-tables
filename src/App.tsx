@@ -28,6 +28,7 @@ import type {
   WorkerStructureInput,
 } from './generator/types'
 import { PriceCatalog } from './components/PriceCatalog'
+import { AiStructureGenerator } from './components/AiStructureGenerator'
 import './App.css'
 
 type StructurePhase = 'queued' | 'analyzing' | 'ready' | 'rejected'
@@ -628,6 +629,8 @@ function App() {
               </div>
             </li>
           </ol>
+
+          <AiStructureGenerator onStructureGenerated={addFiles} />
 
           <section className="upload-card">
             <div className="card-intro">
