@@ -1,4 +1,5 @@
 import policyData from './data/survival-policy-26_2.json'
+import { hasExplicitSurvivalPrice } from './pricing'
 import type {
   MaterialCount,
   PolicyDependency,
@@ -80,9 +81,74 @@ type PolicyAccumulator = {
 
 const policy = policyData as SurvivalPolicyData
 const deniedById = new Map(policy.deny.map((entry) => [entry.id, entry.reason]))
+const deniedItemPatterns: ReadonlyArray<readonly [RegExp, string]> = [
+  [/^minecraft:[a-z0-9_]+_spawn_egg$/, 'Los huevos de aparición son exclusivos de Creative o comandos.'],
+]
+const ALLOWED_DECORATIVE_ENTITY_IDS = new Set([
+  'minecraft:armor_stand',
+  'minecraft:item_frame',
+  'minecraft:glow_item_frame',
+  'minecraft:painting',
+  'minecraft:leash_knot',
+])
+const ENTITY_ITEM_EQUIVALENTS = new Map([
+  ['minecraft:armor_stand', 'minecraft:armor_stand'],
+  ['minecraft:item_frame', 'minecraft:item_frame'],
+  ['minecraft:glow_item_frame', 'minecraft:glow_item_frame'],
+  ['minecraft:painting', 'minecraft:painting'],
+])
 
+function assertStaticPolicyPrices() {
+  const referenced = policy.rules.flatMap((rule) => [
+    ...rule.requirements
+      .filter((requirement) => requirement.billable !== false)
+      .map((requirement) => requirement.id),
+    ...Object.values(rule.sourceMap ?? {}),
+  ])
+  const missing = [...new Set(referenced)].filter(
+    (id) => !hasExplicitSurvivalPrice(id),
+  )
+
+  if (missing.length) {
+    throw new Error(
+      'La política survival tiene dependencias cobrables sin precio explícito: ' +
+        missing.join(', ') +
+        '.',
+    )
+  }
+}
+
+assertStaticPolicyPrices()
+
+function deniedItemReason(id: string) {
+  return deniedById.get(id) ??
+    deniedItemPatterns.find(([pattern]) => pattern.test(id))?.[1]
+}
 export function isSurvivalDeniedId(id: string) {
   return deniedById.has(id)
+}
+
+/** Only inert decoration entities can be carried by a strict survival structure. */
+export function applyPolicyEntity(
+  accumulator: PolicyAccumulator,
+  id: string,
+  location: string,
+) {
+  if (!id.startsWith('minecraft:')) {
+    return 'Entidad no vanilla no permitida en ' + location + ': ' + id + '.'
+  }
+  if (!ALLOWED_DECORATIVE_ENTITY_IDS.has(id)) {
+    return (
+      'Entidad no permitida por la política survival: ' +
+      id +
+      ' en ' +
+      location +
+      '. Solo se permiten entidades decorativas sin mecánicas de botín, comercio o combate.'
+    )
+  }
+
+  const itemId = ENTITY_ITEM_EQUIVALENTS.get(id)
+  return itemId ? applyPolicyItem(accumulator, itemId, 1, location) : undefined
 }
 
 export const SURVIVAL_POLICY_METADATA = {
@@ -164,6 +230,14 @@ function addRequirement(
   }
 
   const billable = requirement.billable !== false
+  if (billable && !hasExplicitSurvivalPrice(requirement.id)) {
+    return (
+      'Dependencia survival sin precio explícito: ' +
+      requirement.id +
+      '. Añádela al catálogo antes de usarla.'
+    )
+  }
+
   const current = accumulator.dependencies.get(requirement.id)
   accumulator.dependencies.set(requirement.id, {
     id: requirement.id,
@@ -178,6 +252,8 @@ function addRequirement(
       requirement.count,
     )
   }
+
+  return undefined
 }
 
 export function createPolicyAccumulator(): PolicyAccumulator {
@@ -206,7 +282,7 @@ export function applyPolicyItem(
     return 'Ítem no vanilla no permitido en ' + location + ': ' + id + '.'
   }
 
-  const denyReason = deniedById.get(id)
+  const denyReason = deniedItemReason(id)
   if (denyReason) {
     return (
       'Ítem no permitido por la política survival: ' +
@@ -215,6 +291,16 @@ export function applyPolicyItem(
       location +
       '. ' +
       denyReason
+    )
+  }
+
+  if (!hasExplicitSurvivalPrice(id)) {
+    return (
+      'Ítem vanilla sin precio survival explícito en ' +
+      location +
+      ': ' +
+      id +
+      '. Añádelo al catálogo antes de permitirlo dentro de una construcción.'
     )
   }
 
@@ -257,12 +343,16 @@ export function applyPolicyState(
       replaced = true
     }
 
-    rule.requirements.forEach((requirement) =>
-      addRequirement(accumulator, rule, requirement),
-    )
+    for (const requirement of rule.requirements) {
+      const requirementError = addRequirement(accumulator, rule, requirement)
+      if (requirementError) return requirementError
+    }
 
     const derived = transformedRequirement(rule, state)
-    if (derived) addRequirement(accumulator, rule, derived)
+    if (derived) {
+      const derivedError = addRequirement(accumulator, rule, derived)
+      if (derivedError) return derivedError
+    }
 
     if (rule.worldLimit) {
       const current = accumulator.worldLimits.get(state.name)

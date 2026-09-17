@@ -5,9 +5,27 @@ export type JsonFileWriter = (path: string, value: unknown) => void
 
 const CONTROLLER_BLOCK = 'minecraft:note_block'
 const CONFIRM_OBJECTIVES = ['bt_confirm1', 'bt_confirm2']
+const OWNER_OBJECTIVES = ['bt_owner0', 'bt_owner1', 'bt_owner2', 'bt_owner3']
+const OWNER_CHECK_TAG = 'bt_owner_check'
+const PLAN_OWNER_MATCH_TAG = 'bt_plan_owner_match'
+const PLAN_OWNER_ONLINE_TAG = 'bt_plan_owner_online'
+const NEW_PLAN_ANCHOR_TAG = 'bt_new_plan_anchor'
 
 function mcfunction(lines: string[]) {
   return lines.join('\n') + '\n'
+}
+
+function ownerMatchConditions(source: string) {
+  return OWNER_OBJECTIVES.map(
+    (objective) => 'if score @s ' + objective + ' = ' + source + ' ' + objective,
+  ).join(' ')
+}
+
+function copyOwnerScores(target: string) {
+  return OWNER_OBJECTIVES.map(
+    (objective) =>
+      'scoreboard players operation ' + target + ' ' + objective + ' = @s ' + objective,
+  )
 }
 
 function action(label: string, command: string, color?: string) {
@@ -207,7 +225,76 @@ function addControllerBlock(
   structures: GeneratedStructure[],
 ) {
   const root = 'data/builder_tables_generated/function/controller_block/'
-  const anchor = '@e[tag=bt_plan_anchor,limit=1]'
+  const anchor = '@e[type=minecraft:marker,tag=bt_plan_anchor,limit=1]'
+  const ownedAnchor =
+    '@e[type=minecraft:marker,tag=bt_plan_anchor,tag=' +
+    PLAN_OWNER_MATCH_TAG +
+    ',limit=1]'
+  const foreignAnchor =
+    '@e[type=minecraft:marker,tag=bt_plan_anchor,tag=!' +
+    PLAN_OWNER_MATCH_TAG +
+    ',limit=1]'
+  const onlineAnchor =
+    '@e[type=minecraft:marker,tag=bt_plan_anchor,tag=' +
+    PLAN_OWNER_ONLINE_TAG +
+    ',limit=1]'
+  const newAnchor =
+    '@e[type=minecraft:marker,tag=' + NEW_PLAN_ANCHOR_TAG + ',limit=1]'
+
+  put(
+    root + 'owner/capture.mcfunction',
+    mcfunction(
+      OWNER_OBJECTIVES.map(
+        (objective, index) =>
+          'execute store result score @s ' +
+          objective +
+          ' run data get entity @s UUID[' +
+          index +
+          ']',
+      ),
+    ),
+  )
+  put(
+    root + 'owner/check_plan.mcfunction',
+    mcfunction([
+      'function builder_tables_generated:controller_block/owner/capture',
+      'tag @a remove ' + OWNER_CHECK_TAG,
+      'tag @s add ' + OWNER_CHECK_TAG,
+      'tag @e[type=minecraft:marker,tag=bt_plan_anchor] remove ' +
+        PLAN_OWNER_MATCH_TAG,
+      'execute as @e[type=minecraft:marker,tag=bt_plan_anchor] ' +
+        ownerMatchConditions('@a[tag=' + OWNER_CHECK_TAG + ',limit=1]') +
+        ' run tag @s add ' +
+        PLAN_OWNER_MATCH_TAG,
+      'tag @s remove ' + OWNER_CHECK_TAG,
+    ]),
+  )
+  put(
+    root + 'owner/mark_online.mcfunction',
+    mcfunction([
+      'execute if entity ' +
+        anchor +
+        ' ' +
+        ownerMatchConditions(anchor) +
+        ' run tag ' +
+        anchor +
+        ' add ' +
+        PLAN_OWNER_ONLINE_TAG,
+    ]),
+  )
+  put(
+    root + 'owner/validate_online.mcfunction',
+    mcfunction([
+      'tag @e[type=minecraft:marker,tag=bt_plan_anchor] remove ' +
+        PLAN_OWNER_ONLINE_TAG,
+      'execute as @a run function builder_tables_generated:controller_block/owner/mark_online',
+      'execute if entity ' +
+        anchor +
+        ' unless entity ' +
+        onlineAnchor +
+        ' run function builder_tables_generated:controller_block/remove_anchor',
+    ]),
+  )
 
   put(
     root + 'init.mcfunction',
@@ -218,6 +305,11 @@ function addControllerBlock(
         .concat(
           CONFIRM_OBJECTIVES.map(
             (objective) => 'scoreboard objectives add ' + objective + ' trigger',
+          ),
+        )
+        .concat(
+          OWNER_OBJECTIVES.map(
+            (objective) => 'scoreboard objectives add ' + objective + ' dummy',
           ),
         )
         .concat([
@@ -239,33 +331,41 @@ function addControllerBlock(
     root + 'remove_anchor.mcfunction',
     mcfunction([
       'function builder_tables_generated:preview/clear',
-      'kill @e[tag=bt_plan_anchor]',
+      'kill @e[type=minecraft:marker,tag=bt_plan_anchor]',
       'scoreboard players set @a bt_active 0',
       'scoreboard players set @a bt_rot_state 0',
     ]),
   )
   put(
     root + 'validate.mcfunction',
-    'execute as ' +
-      anchor +
-      ' at @s unless block ~ ~ ~ ' +
-      CONTROLLER_BLOCK +
-      ' run function builder_tables_generated:controller_block/remove_anchor\n',
+    mcfunction([
+      'execute as ' +
+        anchor +
+        ' at @s unless block ~ ~ ~ ' +
+        CONTROLLER_BLOCK +
+        ' run function builder_tables_generated:controller_block/remove_anchor',
+      'execute if entity ' +
+        anchor +
+        ' run function builder_tables_generated:controller_block/owner/validate_online',
+    ]),
   )
   put(
     root + 'refresh.mcfunction',
     mcfunction(
-      structures.map(
+      [
+        'function builder_tables_generated:controller_block/owner/check_plan',
+        'execute unless entity ' + ownedAnchor + ' run return 0',
+      ].concat(structures.map(
         (structure, index) =>
           'execute if score @s bt_active matches ' +
           (index + 1) +
           ' if entity ' +
-          anchor +
+          ownedAnchor +
           ' at ' +
-          anchor +
+          ownedAnchor +
           ' run function builder_tables_generated:preview/start/' +
           structure.analysis.id,
-      ),
+      )),
     ),
   )
   put(
@@ -294,8 +394,22 @@ function addControllerBlock(
     root + 'found_place.mcfunction',
     mcfunction([
       'tag @s add bt_ctrl_ray_hit',
+      'function builder_tables_generated:controller_block/owner/check_plan',
+      'execute if entity ' +
+        foreignAnchor +
+        ' run tellraw @s {"text":"[Builder Tables] Otro jugador ya está usando el Bloque de Planificación.","color":"red"}',
+      'execute if entity ' + foreignAnchor + ' run setblock ~ ~ ~ air',
+      'execute if entity ' +
+        foreignAnchor +
+        ' run function builder_tables:give_controller',
+      'execute if entity ' + foreignAnchor + ' run return 0',
       'function builder_tables_generated:controller_block/remove_anchor',
-      'summon minecraft:marker ~ ~ ~ {Tags:["bt_plan_anchor"]}',
+      'function builder_tables_generated:controller_block/owner/capture',
+      'summon minecraft:marker ~ ~ ~ {Tags:["bt_plan_anchor","' +
+        NEW_PLAN_ANCHOR_TAG +
+        '"]}',
+      ...copyOwnerScores(newAnchor),
+      'tag ' + newAnchor + ' remove ' + NEW_PLAN_ANCHOR_TAG,
       'tellraw @s {"text":"[Builder Tables] Bloque de Planificación registrado. Haz clic para abrir el catálogo.","color":"aqua"}',
     ]),
   )
@@ -303,8 +417,16 @@ function addControllerBlock(
     root + 'found_use.mcfunction',
     mcfunction([
       'tag @s add bt_ctrl_ray_hit',
-      'execute if entity @e[tag=bt_plan_anchor,distance=..0.1,limit=1] run setblock ~ ~ ~ minecraft:note_block[note=0]',
-      'execute if entity @e[tag=bt_plan_anchor,distance=..0.1,limit=1] run function builder_tables:controller/open',
+      'function builder_tables_generated:controller_block/owner/check_plan',
+      'execute if entity @e[type=minecraft:marker,tag=bt_plan_anchor,tag=!' +
+        PLAN_OWNER_MATCH_TAG +
+        ',distance=..0.1,limit=1] run tellraw @s {"text":"[Builder Tables] Este Bloque de Planificación pertenece a otro jugador.","color":"red"}',
+      'execute if entity @e[type=minecraft:marker,tag=bt_plan_anchor,tag=' +
+        PLAN_OWNER_MATCH_TAG +
+        ',distance=..0.1,limit=1] run setblock ~ ~ ~ minecraft:note_block[note=0]',
+      'execute if entity @e[type=minecraft:marker,tag=bt_plan_anchor,tag=' +
+        PLAN_OWNER_MATCH_TAG +
+        ',distance=..0.1,limit=1] run function builder_tables:controller/open',
     ]),
   )
 

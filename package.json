@@ -8,6 +8,7 @@
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "test:policy": "node scripts/test-survival-policy.mjs",
+    "test:dynamics": "node scripts/test-dynamics.mjs",
     "preview": "vite preview"
   },
   "dependencies": {

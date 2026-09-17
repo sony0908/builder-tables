@@ -1,92 +1,2926 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "minecraftVersion": "26.2",
   "pointsPerEmerald": 10,
+  "recipeFloorPremium": 1.15,
   "overrides": [
     {
-      "id": "minecraft:frogspawn",
-      "points": 640,
-      "label": "Decoración de ciclo de vida excepcional: 64 esmeraldas"
+      "id": "minecraft:emerald",
+      "points": 12
     },
-    { "id": "minecraft:water_bucket", "points": 5 },
-    { "id": "minecraft:lava_bucket", "points": 20 },
-    { "id": "minecraft:powder_snow_bucket", "points": 10 },
-    { "id": "minecraft:cauldron", "points": 10 },
-    { "id": "minecraft:flint_and_steel", "points": 10 },
-
-    { "id": "minecraft:copper_block", "points": 6 },
-    { "id": "minecraft:raw_copper_block", "points": 6 },
-    { "id": "minecraft:iron_block", "points": 9 },
-    { "id": "minecraft:raw_iron_block", "points": 9 },
-    { "id": "minecraft:gold_block", "points": 12 },
-    { "id": "minecraft:raw_gold_block", "points": 12 },
-    { "id": "minecraft:diamond_block", "points": 36 },
-    { "id": "minecraft:emerald_block", "points": 36 },
-    { "id": "minecraft:netherite_block", "points": 144 },
-
-    { "id": "minecraft:piston", "points": 18 },
-    { "id": "minecraft:hopper", "points": 32 },
-    { "id": "minecraft:observer", "points": 22 },
-    { "id": "minecraft:comparator", "points": 26 },
-
-    { "id": "minecraft:obsidian", "points": 10 },
-    { "id": "minecraft:crying_obsidian", "points": 45 },
-    { "id": "minecraft:ender_chest", "points": 100 },
-    { "id": "minecraft:shulker_box", "points": 80 },
-    { "id": "minecraft:white_shulker_box", "points": 80 },
-    { "id": "minecraft:orange_shulker_box", "points": 80 },
-    { "id": "minecraft:magenta_shulker_box", "points": 80 },
-    { "id": "minecraft:light_blue_shulker_box", "points": 80 },
-    { "id": "minecraft:yellow_shulker_box", "points": 80 },
-    { "id": "minecraft:lime_shulker_box", "points": 80 },
-    { "id": "minecraft:pink_shulker_box", "points": 80 },
-    { "id": "minecraft:gray_shulker_box", "points": 80 },
-    { "id": "minecraft:light_gray_shulker_box", "points": 80 },
-    { "id": "minecraft:cyan_shulker_box", "points": 80 },
-    { "id": "minecraft:purple_shulker_box", "points": 80 },
-    { "id": "minecraft:blue_shulker_box", "points": 80 },
-    { "id": "minecraft:brown_shulker_box", "points": 80 },
-    { "id": "minecraft:green_shulker_box", "points": 80 },
-    { "id": "minecraft:red_shulker_box", "points": 80 },
-    { "id": "minecraft:black_shulker_box", "points": 80 },
-    { "id": "minecraft:respawn_anchor", "points": 180 },
-
-    { "id": "minecraft:beacon", "points": 250 },
-    { "id": "minecraft:conduit", "points": 300 },
-    { "id": "minecraft:heavy_core", "points": 500 },
-    { "id": "minecraft:lodestone", "points": 250 },
-    { "id": "minecraft:sponge", "points": 120 },
-    { "id": "minecraft:wet_sponge", "points": 120 },
-
-    { "id": "minecraft:sulfur_spike", "points": 3 },
-    { "id": "minecraft:sulfur", "points": 12 },
-    { "id": "minecraft:potent_sulfur", "points": 108 },
-    { "id": "minecraft:cinnabar", "points": 8 },
-
-    { "id": "minecraft:sulfur_slab", "points": 14 },
-    { "id": "minecraft:sulfur_stairs", "points": 14 },
-    { "id": "minecraft:sulfur_wall", "points": 14 },
-    { "id": "minecraft:polished_sulfur", "points": 14 },
-    { "id": "minecraft:polished_sulfur_slab", "points": 14 },
-    { "id": "minecraft:polished_sulfur_stairs", "points": 14 },
-    { "id": "minecraft:polished_sulfur_wall", "points": 14 },
-    { "id": "minecraft:sulfur_bricks", "points": 14 },
-    { "id": "minecraft:sulfur_brick_slab", "points": 14 },
-    { "id": "minecraft:sulfur_brick_stairs", "points": 14 },
-    { "id": "minecraft:sulfur_brick_wall", "points": 14 },
-    { "id": "minecraft:chiseled_sulfur", "points": 14 },
-
-    { "id": "minecraft:cinnabar_slab", "points": 10 },
-    { "id": "minecraft:cinnabar_stairs", "points": 10 },
-    { "id": "minecraft:cinnabar_wall", "points": 10 },
-    { "id": "minecraft:polished_cinnabar", "points": 10 },
-    { "id": "minecraft:polished_cinnabar_slab", "points": 10 },
-    { "id": "minecraft:polished_cinnabar_stairs", "points": 10 },
-    { "id": "minecraft:polished_cinnabar_wall", "points": 10 },
-    { "id": "minecraft:cinnabar_bricks", "points": 10 },
-    { "id": "minecraft:cinnabar_brick_slab", "points": 10 },
-    { "id": "minecraft:cinnabar_brick_stairs", "points": 10 },
-    { "id": "minecraft:cinnabar_brick_wall", "points": 10 },
-    { "id": "minecraft:chiseled_cinnabar", "points": 10 }
+    {
+      "id": "minecraft:emerald_block",
+      "points": 120
+    },
+    {
+      "id": "minecraft:copper_ingot",
+      "points": 10
+    },
+    {
+      "id": "minecraft:raw_copper",
+      "points": 8
+    },
+    {
+      "id": "minecraft:copper_block",
+      "points": 100
+    },
+    {
+      "id": "minecraft:raw_copper_block",
+      "points": 80
+    },
+    {
+      "id": "minecraft:iron_ingot",
+      "points": 20
+    },
+    {
+      "id": "minecraft:raw_iron",
+      "points": 15
+    },
+    {
+      "id": "minecraft:iron_block",
+      "points": 180
+    },
+    {
+      "id": "minecraft:raw_iron_block",
+      "points": 135
+    },
+    {
+      "id": "minecraft:gold_ingot",
+      "points": 30
+    },
+    {
+      "id": "minecraft:raw_gold",
+      "points": 25
+    },
+    {
+      "id": "minecraft:gold_block",
+      "points": 270
+    },
+    {
+      "id": "minecraft:raw_gold_block",
+      "points": 225
+    },
+    {
+      "id": "minecraft:diamond",
+      "points": 80
+    },
+    {
+      "id": "minecraft:diamond_block",
+      "points": 720
+    },
+    {
+      "id": "minecraft:netherite_scrap",
+      "points": 200
+    },
+    {
+      "id": "minecraft:ancient_debris",
+      "points": 250
+    },
+    {
+      "id": "minecraft:netherite_ingot",
+      "points": 1000
+    },
+    {
+      "id": "minecraft:netherite_block",
+      "points": 9000
+    },
+    {
+      "id": "minecraft:coal",
+      "points": 5
+    },
+    {
+      "id": "minecraft:coal_block",
+      "points": 45
+    },
+    {
+      "id": "minecraft:redstone",
+      "points": 10
+    },
+    {
+      "id": "minecraft:redstone_block",
+      "points": 90
+    },
+    {
+      "id": "minecraft:lapis_lazuli",
+      "points": 20
+    },
+    {
+      "id": "minecraft:lapis_block",
+      "points": 180
+    },
+    {
+      "id": "minecraft:quartz",
+      "points": 10
+    },
+    {
+      "id": "minecraft:quartz_block",
+      "points": 60
+    },
+    {
+      "id": "minecraft:amethyst_shard",
+      "points": 20
+    },
+    {
+      "id": "minecraft:amethyst_block",
+      "points": 80
+    },
+    {
+      "id": "minecraft:coal_ore",
+      "points": 30
+    },
+    {
+      "id": "minecraft:deepslate_coal_ore",
+      "points": 30
+    },
+    {
+      "id": "minecraft:copper_ore",
+      "points": 40
+    },
+    {
+      "id": "minecraft:deepslate_copper_ore",
+      "points": 40
+    },
+    {
+      "id": "minecraft:iron_ore",
+      "points": 80
+    },
+    {
+      "id": "minecraft:deepslate_iron_ore",
+      "points": 80
+    },
+    {
+      "id": "minecraft:gold_ore",
+      "points": 120
+    },
+    {
+      "id": "minecraft:deepslate_gold_ore",
+      "points": 120
+    },
+    {
+      "id": "minecraft:lapis_ore",
+      "points": 720
+    },
+    {
+      "id": "minecraft:deepslate_lapis_ore",
+      "points": 720
+    },
+    {
+      "id": "minecraft:redstone_ore",
+      "points": 200
+    },
+    {
+      "id": "minecraft:deepslate_redstone_ore",
+      "points": 200
+    },
+    {
+      "id": "minecraft:diamond_ore",
+      "points": 320
+    },
+    {
+      "id": "minecraft:deepslate_diamond_ore",
+      "points": 320
+    },
+    {
+      "id": "minecraft:emerald_ore",
+      "points": 50
+    },
+    {
+      "id": "minecraft:deepslate_emerald_ore",
+      "points": 50
+    },
+    {
+      "id": "minecraft:nether_quartz_ore",
+      "points": 40
+    },
+    {
+      "id": "minecraft:nether_gold_ore",
+      "points": 100
+    },
+    {
+      "id": "minecraft:bucket",
+      "points": 15
+    },
+    {
+      "id": "minecraft:water_bucket",
+      "points": 70
+    },
+    {
+      "id": "minecraft:lava_bucket",
+      "points": 150
+    },
+    {
+      "id": "minecraft:powder_snow_bucket",
+      "points": 100
+    },
+    {
+      "id": "minecraft:cauldron",
+      "points": 160
+    },
+    {
+      "id": "minecraft:flint_and_steel",
+      "points": 30
+    },
+    {
+      "id": "minecraft:obsidian",
+      "points": 80
+    },
+    {
+      "id": "minecraft:crying_obsidian",
+      "points": 300
+    },
+    {
+      "id": "minecraft:glowstone",
+      "points": 80
+    },
+    {
+      "id": "minecraft:ender_pearl",
+      "points": 100
+    },
+    {
+      "id": "minecraft:blaze_rod",
+      "points": 60
+    },
+    {
+      "id": "minecraft:blaze_powder",
+      "points": 30
+    },
+    {
+      "id": "minecraft:ender_eye",
+      "points": 120
+    },
+    {
+      "id": "minecraft:redstone_torch",
+      "points": 20
+    },
+    {
+      "id": "minecraft:bow",
+      "points": 40
+    },
+    {
+      "id": "minecraft:piston",
+      "points": 120
+    },
+    {
+      "id": "minecraft:sticky_piston",
+      "points": 200
+    },
+    {
+      "id": "minecraft:hopper",
+      "points": 300
+    },
+    {
+      "id": "minecraft:observer",
+      "points": 100
+    },
+    {
+      "id": "minecraft:comparator",
+      "points": 120
+    },
+    {
+      "id": "minecraft:repeater",
+      "points": 100
+    },
+    {
+      "id": "minecraft:dispenser",
+      "points": 140
+    },
+    {
+      "id": "minecraft:dropper",
+      "points": 80
+    },
+    {
+      "id": "minecraft:crafter",
+      "points": 400
+    },
+    {
+      "id": "minecraft:daylight_detector",
+      "points": 150
+    },
+    {
+      "id": "minecraft:redstone_lamp",
+      "points": 120
+    },
+    {
+      "id": "minecraft:sculk_sensor",
+      "points": 150
+    },
+    {
+      "id": "minecraft:calibrated_sculk_sensor",
+      "points": 200
+    },
+    {
+      "id": "minecraft:note_block",
+      "points": 120
+    },
+    {
+      "id": "minecraft:jukebox",
+      "points": 300
+    },
+    {
+      "id": "minecraft:target",
+      "points": 80
+    },
+    {
+      "id": "minecraft:tnt",
+      "points": 150
+    },
+    {
+      "id": "minecraft:slime_ball",
+      "points": 80
+    },
+    {
+      "id": "minecraft:slime_block",
+      "points": 720
+    },
+    {
+      "id": "minecraft:honey_bottle",
+      "points": 20
+    },
+    {
+      "id": "minecraft:honeycomb",
+      "points": 20
+    },
+    {
+      "id": "minecraft:honey_block",
+      "points": 100
+    },
+    {
+      "id": "minecraft:honeycomb_block",
+      "points": 100
+    },
+    {
+      "id": "minecraft:furnace",
+      "points": 50
+    },
+    {
+      "id": "minecraft:blast_furnace",
+      "points": 250
+    },
+    {
+      "id": "minecraft:smoker",
+      "points": 100
+    },
+    {
+      "id": "minecraft:smithing_table",
+      "points": 100
+    },
+    {
+      "id": "minecraft:stonecutter",
+      "points": 50
+    },
+    {
+      "id": "minecraft:grindstone",
+      "points": 80
+    },
+    {
+      "id": "minecraft:loom",
+      "points": 60
+    },
+    {
+      "id": "minecraft:cartography_table",
+      "points": 100
+    },
+    {
+      "id": "minecraft:fletching_table",
+      "points": 100
+    },
+    {
+      "id": "minecraft:lectern",
+      "points": 100
+    },
+    {
+      "id": "minecraft:anvil",
+      "points": 800
+    },
+    {
+      "id": "minecraft:chipped_anvil",
+      "points": 600
+    },
+    {
+      "id": "minecraft:damaged_anvil",
+      "points": 600
+    },
+    {
+      "id": "minecraft:enchanting_table",
+      "points": 800
+    },
+    {
+      "id": "minecraft:brewing_stand",
+      "points": 100
+    },
+    {
+      "id": "minecraft:bookshelf",
+      "points": 180
+    },
+    {
+      "id": "minecraft:chiseled_bookshelf",
+      "points": 200
+    },
+    {
+      "id": "minecraft:lantern",
+      "points": 20
+    },
+    {
+      "id": "minecraft:soul_lantern",
+      "points": 30
+    },
+    {
+      "id": "minecraft:item_frame",
+      "points": 140
+    },
+    {
+      "id": "minecraft:glow_item_frame",
+      "points": 180
+    },
+    {
+      "id": "minecraft:bell",
+      "points": 720
+    },
+    {
+      "id": "minecraft:ice",
+      "points": 10
+    },
+    {
+      "id": "minecraft:packed_ice",
+      "points": 20
+    },
+    {
+      "id": "minecraft:blue_ice",
+      "points": 120
+    },
+    {
+      "id": "minecraft:name_tag",
+      "points": 20
+    },
+    {
+      "id": "minecraft:white_bed",
+      "points": 60
+    },
+    {
+      "id": "minecraft:orange_bed",
+      "points": 60
+    },
+    {
+      "id": "minecraft:magenta_bed",
+      "points": 60
+    },
+    {
+      "id": "minecraft:light_blue_bed",
+      "points": 60
+    },
+    {
+      "id": "minecraft:yellow_bed",
+      "points": 60
+    },
+    {
+      "id": "minecraft:lime_bed",
+      "points": 60
+    },
+    {
+      "id": "minecraft:pink_bed",
+      "points": 60
+    },
+    {
+      "id": "minecraft:gray_bed",
+      "points": 60
+    },
+    {
+      "id": "minecraft:light_gray_bed",
+      "points": 60
+    },
+    {
+      "id": "minecraft:cyan_bed",
+      "points": 60
+    },
+    {
+      "id": "minecraft:purple_bed",
+      "points": 60
+    },
+    {
+      "id": "minecraft:blue_bed",
+      "points": 60
+    },
+    {
+      "id": "minecraft:brown_bed",
+      "points": 60
+    },
+    {
+      "id": "minecraft:green_bed",
+      "points": 60
+    },
+    {
+      "id": "minecraft:red_bed",
+      "points": 60
+    },
+    {
+      "id": "minecraft:black_bed",
+      "points": 60
+    },
+    {
+      "id": "minecraft:candle",
+      "points": 45
+    },
+    {
+      "id": "minecraft:white_candle",
+      "points": 45
+    },
+    {
+      "id": "minecraft:orange_candle",
+      "points": 45
+    },
+    {
+      "id": "minecraft:magenta_candle",
+      "points": 45
+    },
+    {
+      "id": "minecraft:light_blue_candle",
+      "points": 45
+    },
+    {
+      "id": "minecraft:yellow_candle",
+      "points": 45
+    },
+    {
+      "id": "minecraft:lime_candle",
+      "points": 45
+    },
+    {
+      "id": "minecraft:pink_candle",
+      "points": 45
+    },
+    {
+      "id": "minecraft:gray_candle",
+      "points": 45
+    },
+    {
+      "id": "minecraft:light_gray_candle",
+      "points": 45
+    },
+    {
+      "id": "minecraft:cyan_candle",
+      "points": 45
+    },
+    {
+      "id": "minecraft:purple_candle",
+      "points": 45
+    },
+    {
+      "id": "minecraft:blue_candle",
+      "points": 45
+    },
+    {
+      "id": "minecraft:brown_candle",
+      "points": 45
+    },
+    {
+      "id": "minecraft:green_candle",
+      "points": 45
+    },
+    {
+      "id": "minecraft:red_candle",
+      "points": 45
+    },
+    {
+      "id": "minecraft:black_candle",
+      "points": 45
+    },
+    {
+      "id": "minecraft:tube_coral_block",
+      "points": 60
+    },
+    {
+      "id": "minecraft:brain_coral_block",
+      "points": 60
+    },
+    {
+      "id": "minecraft:bubble_coral_block",
+      "points": 60
+    },
+    {
+      "id": "minecraft:fire_coral_block",
+      "points": 60
+    },
+    {
+      "id": "minecraft:horn_coral_block",
+      "points": 60
+    },
+    {
+      "id": "minecraft:dead_tube_coral_block",
+      "points": 30
+    },
+    {
+      "id": "minecraft:dead_brain_coral_block",
+      "points": 30
+    },
+    {
+      "id": "minecraft:dead_bubble_coral_block",
+      "points": 30
+    },
+    {
+      "id": "minecraft:dead_fire_coral_block",
+      "points": 30
+    },
+    {
+      "id": "minecraft:dead_horn_coral_block",
+      "points": 30
+    },
+    {
+      "id": "minecraft:ender_chest",
+      "points": 1000
+    },
+    {
+      "id": "minecraft:shulker_shell",
+      "points": 500
+    },
+    {
+      "id": "minecraft:shulker_box",
+      "points": 1400
+    },
+    {
+      "id": "minecraft:white_shulker_box",
+      "points": 1400
+    },
+    {
+      "id": "minecraft:orange_shulker_box",
+      "points": 1400
+    },
+    {
+      "id": "minecraft:magenta_shulker_box",
+      "points": 1400
+    },
+    {
+      "id": "minecraft:light_blue_shulker_box",
+      "points": 1400
+    },
+    {
+      "id": "minecraft:yellow_shulker_box",
+      "points": 1400
+    },
+    {
+      "id": "minecraft:lime_shulker_box",
+      "points": 1400
+    },
+    {
+      "id": "minecraft:pink_shulker_box",
+      "points": 1400
+    },
+    {
+      "id": "minecraft:gray_shulker_box",
+      "points": 1400
+    },
+    {
+      "id": "minecraft:light_gray_shulker_box",
+      "points": 1400
+    },
+    {
+      "id": "minecraft:cyan_shulker_box",
+      "points": 1400
+    },
+    {
+      "id": "minecraft:purple_shulker_box",
+      "points": 1400
+    },
+    {
+      "id": "minecraft:blue_shulker_box",
+      "points": 1400
+    },
+    {
+      "id": "minecraft:brown_shulker_box",
+      "points": 1400
+    },
+    {
+      "id": "minecraft:green_shulker_box",
+      "points": 1400
+    },
+    {
+      "id": "minecraft:red_shulker_box",
+      "points": 1400
+    },
+    {
+      "id": "minecraft:black_shulker_box",
+      "points": 1400
+    },
+    {
+      "id": "minecraft:respawn_anchor",
+      "points": 2400
+    },
+    {
+      "id": "minecraft:beacon",
+      "points": 6400
+    },
+    {
+      "id": "minecraft:conduit",
+      "points": 4000
+    },
+    {
+      "id": "minecraft:heavy_core",
+      "points": 10000
+    },
+    {
+      "id": "minecraft:lodestone",
+      "points": 2560
+    },
+    {
+      "id": "minecraft:sponge",
+      "points": 640
+    },
+    {
+      "id": "minecraft:wet_sponge",
+      "points": 640
+    },
+    {
+      "id": "minecraft:frogspawn",
+      "points": 1280
+    },
+    {
+      "id": "minecraft:nautilus_shell",
+      "points": 200
+    },
+    {
+      "id": "minecraft:heart_of_the_sea",
+      "points": 1280
+    },
+    {
+      "id": "minecraft:wither_skeleton_skull",
+      "points": 1000
+    },
+    {
+      "id": "minecraft:nether_star",
+      "points": 5000
+    },
+    {
+      "id": "minecraft:elytra",
+      "points": 2560
+    },
+    {
+      "id": "minecraft:totem_of_undying",
+      "points": 1280
+    },
+    {
+      "id": "minecraft:trident",
+      "points": 1280
+    },
+    {
+      "id": "minecraft:mace",
+      "points": 12000
+    },
+    {
+      "id": "minecraft:golden_apple",
+      "points": 300
+    },
+    {
+      "id": "minecraft:enchanted_golden_apple",
+      "points": 5120
+    },
+    {
+      "id": "minecraft:sniffer_egg",
+      "points": 1280
+    },
+    {
+      "id": "minecraft:turtle_egg",
+      "points": 320
+    },
+    {
+      "id": "minecraft:dragon_head",
+      "points": 2560
+    },
+    {
+      "id": "minecraft:dragon_wall_head",
+      "points": 2560
+    },
+    {
+      "id": "minecraft:recovery_compass",
+      "points": 1200
+    },
+    {
+      "id": "minecraft:echo_shard",
+      "points": 100
+    },
+    {
+      "id": "minecraft:enchanted_book",
+      "points": 1000
+    },
+    {
+      "id": "minecraft:sulfur_spike",
+      "points": 10
+    },
+    {
+      "id": "minecraft:sulfur",
+      "points": 40
+    },
+    {
+      "id": "minecraft:potent_sulfur",
+      "points": 400
+    },
+    {
+      "id": "minecraft:cinnabar",
+      "points": 30
+    },
+    {
+      "id": "minecraft:sulfur_slab",
+      "points": 50
+    },
+    {
+      "id": "minecraft:sulfur_stairs",
+      "points": 50
+    },
+    {
+      "id": "minecraft:sulfur_wall",
+      "points": 50
+    },
+    {
+      "id": "minecraft:polished_sulfur",
+      "points": 50
+    },
+    {
+      "id": "minecraft:polished_sulfur_slab",
+      "points": 50
+    },
+    {
+      "id": "minecraft:polished_sulfur_stairs",
+      "points": 50
+    },
+    {
+      "id": "minecraft:polished_sulfur_wall",
+      "points": 50
+    },
+    {
+      "id": "minecraft:sulfur_bricks",
+      "points": 50
+    },
+    {
+      "id": "minecraft:sulfur_brick_slab",
+      "points": 50
+    },
+    {
+      "id": "minecraft:sulfur_brick_stairs",
+      "points": 50
+    },
+    {
+      "id": "minecraft:sulfur_brick_wall",
+      "points": 50
+    },
+    {
+      "id": "minecraft:chiseled_sulfur",
+      "points": 50
+    },
+    {
+      "id": "minecraft:cinnabar_slab",
+      "points": 40
+    },
+    {
+      "id": "minecraft:cinnabar_stairs",
+      "points": 40
+    },
+    {
+      "id": "minecraft:cinnabar_wall",
+      "points": 40
+    },
+    {
+      "id": "minecraft:polished_cinnabar",
+      "points": 40
+    },
+    {
+      "id": "minecraft:polished_cinnabar_slab",
+      "points": 40
+    },
+    {
+      "id": "minecraft:polished_cinnabar_stairs",
+      "points": 40
+    },
+    {
+      "id": "minecraft:polished_cinnabar_wall",
+      "points": 40
+    },
+    {
+      "id": "minecraft:cinnabar_bricks",
+      "points": 40
+    },
+    {
+      "id": "minecraft:cinnabar_brick_slab",
+      "points": 40
+    },
+    {
+      "id": "minecraft:cinnabar_brick_stairs",
+      "points": 40
+    },
+    {
+      "id": "minecraft:cinnabar_brick_wall",
+      "points": 40
+    },
+    {
+      "id": "minecraft:chiseled_cinnabar",
+      "points": 40
+    },
+    {
+      "id": "minecraft:leather",
+      "points": 10
+    },
+    {
+      "id": "minecraft:string",
+      "points": 10
+    },
+    {
+      "id": "minecraft:paper",
+      "points": 10
+    },
+    {
+      "id": "minecraft:feather",
+      "points": 10
+    },
+    {
+      "id": "minecraft:flint",
+      "points": 5
+    },
+    {
+      "id": "minecraft:iron_nugget",
+      "points": 3
+    },
+    {
+      "id": "minecraft:gold_nugget",
+      "points": 4
+    },
+    {
+      "id": "minecraft:copper_nugget",
+      "points": 2
+    },
+    {
+      "id": "minecraft:dragon_egg",
+      "points": 20000
+    },
+    {
+      "id": "minecraft:beetroot_seeds",
+      "points": 10
+    },
+    {
+      "id": "minecraft:melon_seeds",
+      "points": 15
+    },
+    {
+      "id": "minecraft:pumpkin_seeds",
+      "points": 15
+    },
+    {
+      "id": "minecraft:carrot",
+      "points": 12
+    },
+    {
+      "id": "minecraft:potato",
+      "points": 12
+    },
+    {
+      "id": "minecraft:cocoa_beans",
+      "points": 15
+    },
+    {
+      "id": "minecraft:glow_berries",
+      "points": 25
+    },
+    {
+      "id": "minecraft:pitcher_pod",
+      "points": 50
+    },
+    {
+      "id": "minecraft:sweet_berries",
+      "points": 10
+    },
+    {
+      "id": "minecraft:torchflower_seeds",
+      "points": 50
+    },
+    {
+      "id": "minecraft:ghast_tear",
+      "points": 120
+    },
+    {
+      "id": "minecraft:scute",
+      "points": 40
+    },
+    {
+      "id": "minecraft:saddle",
+      "points": 200
+    },
+    {
+      "id": "minecraft:chainmail_helmet",
+      "points": 120
+    },
+    {
+      "id": "minecraft:chainmail_chestplate",
+      "points": 200
+    },
+    {
+      "id": "minecraft:chainmail_leggings",
+      "points": 180
+    },
+    {
+      "id": "minecraft:chainmail_boots",
+      "points": 100
+    },
+    {
+      "id": "minecraft:iron_horse_armor",
+      "points": 120
+    },
+    {
+      "id": "minecraft:golden_horse_armor",
+      "points": 240
+    },
+    {
+      "id": "minecraft:diamond_horse_armor",
+      "points": 640
+    },
+    {
+      "id": "minecraft:netherite_upgrade_smithing_template",
+      "points": 960
+    },
+    {
+      "id": "minecraft:experience_bottle",
+      "points": 60
+    },
+    {
+      "id": "minecraft:disc_fragment_5",
+      "points": 80
+    },
+    {
+      "id": "minecraft:skeleton_skull",
+      "points": 500
+    },
+    {
+      "id": "minecraft:skeleton_wall_skull",
+      "points": 500
+    },
+    {
+      "id": "minecraft:wither_skeleton_wall_skull",
+      "points": 1000
+    },
+    {
+      "id": "minecraft:zombie_head",
+      "points": 500
+    },
+    {
+      "id": "minecraft:zombie_wall_head",
+      "points": 500
+    },
+    {
+      "id": "minecraft:creeper_head",
+      "points": 1000
+    },
+    {
+      "id": "minecraft:creeper_wall_head",
+      "points": 1000
+    },
+    {
+      "id": "minecraft:piglin_head",
+      "points": 750
+    },
+    {
+      "id": "minecraft:piglin_wall_head",
+      "points": 750
+    }
+  ],
+  "recipeFloors": [
+    {
+      "id": "minecraft:coal_block",
+      "ingredients": [
+        {
+          "id": "minecraft:coal",
+          "count": 9
+        }
+      ]
+    },
+    {
+      "id": "minecraft:copper_block",
+      "ingredients": [
+        {
+          "id": "minecraft:copper_ingot",
+          "count": 9
+        }
+      ]
+    },
+    {
+      "id": "minecraft:raw_copper_block",
+      "ingredients": [
+        {
+          "id": "minecraft:raw_copper",
+          "count": 9
+        }
+      ]
+    },
+    {
+      "id": "minecraft:iron_block",
+      "ingredients": [
+        {
+          "id": "minecraft:iron_ingot",
+          "count": 9
+        }
+      ]
+    },
+    {
+      "id": "minecraft:raw_iron_block",
+      "ingredients": [
+        {
+          "id": "minecraft:raw_iron",
+          "count": 9
+        }
+      ]
+    },
+    {
+      "id": "minecraft:gold_block",
+      "ingredients": [
+        {
+          "id": "minecraft:gold_ingot",
+          "count": 9
+        }
+      ]
+    },
+    {
+      "id": "minecraft:raw_gold_block",
+      "ingredients": [
+        {
+          "id": "minecraft:raw_gold",
+          "count": 9
+        }
+      ]
+    },
+    {
+      "id": "minecraft:diamond_block",
+      "ingredients": [
+        {
+          "id": "minecraft:diamond",
+          "count": 9
+        }
+      ]
+    },
+    {
+      "id": "minecraft:emerald_block",
+      "ingredients": [
+        {
+          "id": "minecraft:emerald",
+          "count": 9
+        }
+      ]
+    },
+    {
+      "id": "minecraft:redstone_block",
+      "ingredients": [
+        {
+          "id": "minecraft:redstone",
+          "count": 9
+        }
+      ]
+    },
+    {
+      "id": "minecraft:lapis_block",
+      "ingredients": [
+        {
+          "id": "minecraft:lapis_lazuli",
+          "count": 9
+        }
+      ]
+    },
+    {
+      "id": "minecraft:amethyst_block",
+      "ingredients": [
+        {
+          "id": "minecraft:amethyst_shard",
+          "count": 4
+        }
+      ]
+    },
+    {
+      "id": "minecraft:netherite_ingot",
+      "ingredients": [
+        {
+          "id": "minecraft:netherite_scrap",
+          "count": 4
+        },
+        {
+          "id": "minecraft:gold_ingot",
+          "count": 4
+        }
+      ]
+    },
+    {
+      "id": "minecraft:netherite_block",
+      "ingredients": [
+        {
+          "id": "minecraft:netherite_ingot",
+          "count": 9
+        }
+      ]
+    },
+    {
+      "id": "minecraft:crafting_table",
+      "ingredients": [
+        {
+          "id": "minecraft:oak_planks",
+          "count": 4
+        }
+      ]
+    },
+    {
+      "id": "minecraft:chest",
+      "ingredients": [
+        {
+          "id": "minecraft:oak_planks",
+          "count": 8
+        }
+      ]
+    },
+    {
+      "id": "minecraft:barrel",
+      "ingredients": [
+        {
+          "id": "minecraft:oak_planks",
+          "count": 6
+        },
+        {
+          "id": "minecraft:oak_slab",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "minecraft:redstone_torch",
+      "ingredients": [
+        {
+          "id": "minecraft:redstone",
+          "count": 1
+        },
+        {
+          "id": "minecraft:stick",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "minecraft:bow",
+      "ingredients": [
+        {
+          "id": "minecraft:stick",
+          "count": 3
+        },
+        {
+          "id": "minecraft:string",
+          "count": 3
+        }
+      ]
+    },
+    {
+      "id": "minecraft:piston",
+      "ingredients": [
+        {
+          "id": "minecraft:oak_planks",
+          "count": 3
+        },
+        {
+          "id": "minecraft:cobblestone",
+          "count": 4
+        },
+        {
+          "id": "minecraft:iron_ingot",
+          "count": 1
+        },
+        {
+          "id": "minecraft:redstone",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "minecraft:sticky_piston",
+      "ingredients": [
+        {
+          "id": "minecraft:piston",
+          "count": 1
+        },
+        {
+          "id": "minecraft:slime_ball",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "minecraft:hopper",
+      "ingredients": [
+        {
+          "id": "minecraft:chest",
+          "count": 1
+        },
+        {
+          "id": "minecraft:iron_ingot",
+          "count": 5
+        }
+      ]
+    },
+    {
+      "id": "minecraft:observer",
+      "ingredients": [
+        {
+          "id": "minecraft:cobblestone",
+          "count": 6
+        },
+        {
+          "id": "minecraft:redstone",
+          "count": 2
+        },
+        {
+          "id": "minecraft:quartz",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "minecraft:comparator",
+      "ingredients": [
+        {
+          "id": "minecraft:redstone_torch",
+          "count": 3
+        },
+        {
+          "id": "minecraft:stone",
+          "count": 3
+        },
+        {
+          "id": "minecraft:quartz",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "minecraft:repeater",
+      "ingredients": [
+        {
+          "id": "minecraft:redstone_torch",
+          "count": 2
+        },
+        {
+          "id": "minecraft:stone",
+          "count": 3
+        },
+        {
+          "id": "minecraft:redstone",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "minecraft:dispenser",
+      "ingredients": [
+        {
+          "id": "minecraft:cobblestone",
+          "count": 7
+        },
+        {
+          "id": "minecraft:bow",
+          "count": 1
+        },
+        {
+          "id": "minecraft:redstone",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "minecraft:dropper",
+      "ingredients": [
+        {
+          "id": "minecraft:cobblestone",
+          "count": 7
+        },
+        {
+          "id": "minecraft:redstone",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "minecraft:crafter",
+      "ingredients": [
+        {
+          "id": "minecraft:iron_ingot",
+          "count": 5
+        },
+        {
+          "id": "minecraft:crafting_table",
+          "count": 1
+        },
+        {
+          "id": "minecraft:dropper",
+          "count": 1
+        },
+        {
+          "id": "minecraft:redstone",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "minecraft:lectern",
+      "ingredients": [
+        {
+          "id": "minecraft:bookshelf",
+          "count": 1
+        },
+        {
+          "id": "minecraft:oak_slab",
+          "count": 4
+        }
+      ]
+    },
+    {
+      "id": "minecraft:composter",
+      "ingredients": [
+        {
+          "id": "minecraft:oak_slab",
+          "count": 7
+        }
+      ]
+    },
+    {
+      "id": "minecraft:redstone_lamp",
+      "ingredients": [
+        {
+          "id": "minecraft:redstone",
+          "count": 4
+        },
+        {
+          "id": "minecraft:glowstone",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "minecraft:jukebox",
+      "ingredients": [
+        {
+          "id": "minecraft:oak_planks",
+          "count": 8
+        },
+        {
+          "id": "minecraft:diamond",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "minecraft:furnace",
+      "ingredients": [
+        {
+          "id": "minecraft:cobblestone",
+          "count": 8
+        }
+      ]
+    },
+    {
+      "id": "minecraft:blast_furnace",
+      "ingredients": [
+        {
+          "id": "minecraft:iron_ingot",
+          "count": 5
+        },
+        {
+          "id": "minecraft:furnace",
+          "count": 1
+        },
+        {
+          "id": "minecraft:smooth_stone",
+          "count": 3
+        }
+      ]
+    },
+    {
+      "id": "minecraft:smoker",
+      "ingredients": [
+        {
+          "id": "minecraft:furnace",
+          "count": 1
+        },
+        {
+          "id": "minecraft:oak_log",
+          "count": 4
+        }
+      ]
+    },
+    {
+      "id": "minecraft:smithing_table",
+      "ingredients": [
+        {
+          "id": "minecraft:iron_ingot",
+          "count": 2
+        },
+        {
+          "id": "minecraft:oak_planks",
+          "count": 4
+        }
+      ]
+    },
+    {
+      "id": "minecraft:stonecutter",
+      "ingredients": [
+        {
+          "id": "minecraft:iron_ingot",
+          "count": 1
+        },
+        {
+          "id": "minecraft:stone",
+          "count": 3
+        }
+      ]
+    },
+    {
+      "id": "minecraft:anvil",
+      "ingredients": [
+        {
+          "id": "minecraft:iron_block",
+          "count": 3
+        },
+        {
+          "id": "minecraft:iron_ingot",
+          "count": 4
+        }
+      ]
+    },
+    {
+      "id": "minecraft:enchanting_table",
+      "ingredients": [
+        {
+          "id": "minecraft:book",
+          "count": 1
+        },
+        {
+          "id": "minecraft:diamond",
+          "count": 2
+        },
+        {
+          "id": "minecraft:obsidian",
+          "count": 4
+        }
+      ]
+    },
+    {
+      "id": "minecraft:brewing_stand",
+      "ingredients": [
+        {
+          "id": "minecraft:blaze_rod",
+          "count": 1
+        },
+        {
+          "id": "minecraft:cobblestone",
+          "count": 3
+        }
+      ]
+    },
+    {
+      "id": "minecraft:ender_chest",
+      "ingredients": [
+        {
+          "id": "minecraft:obsidian",
+          "count": 8
+        },
+        {
+          "id": "minecraft:ender_eye",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "minecraft:shulker_box",
+      "ingredients": [
+        {
+          "id": "minecraft:chest",
+          "count": 1
+        },
+        {
+          "id": "minecraft:shulker_shell",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "minecraft:respawn_anchor",
+      "ingredients": [
+        {
+          "id": "minecraft:crying_obsidian",
+          "count": 6
+        },
+        {
+          "id": "minecraft:glowstone",
+          "count": 3
+        }
+      ]
+    },
+    {
+      "id": "minecraft:beacon",
+      "ingredients": [
+        {
+          "id": "minecraft:glass",
+          "count": 5
+        },
+        {
+          "id": "minecraft:obsidian",
+          "count": 3
+        },
+        {
+          "id": "minecraft:nether_star",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "minecraft:conduit",
+      "ingredients": [
+        {
+          "id": "minecraft:nautilus_shell",
+          "count": 8
+        },
+        {
+          "id": "minecraft:heart_of_the_sea",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "minecraft:stick",
+      "outputCount": 4,
+      "ingredients": [
+        {
+          "id": "minecraft:oak_planks",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "minecraft:wooden_sword",
+      "ingredients": [
+        {
+          "id": "minecraft:oak_planks",
+          "count": 2
+        },
+        {
+          "id": "minecraft:stick",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "minecraft:wooden_pickaxe",
+      "ingredients": [
+        {
+          "id": "minecraft:oak_planks",
+          "count": 3
+        },
+        {
+          "id": "minecraft:stick",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "minecraft:wooden_axe",
+      "ingredients": [
+        {
+          "id": "minecraft:oak_planks",
+          "count": 3
+        },
+        {
+          "id": "minecraft:stick",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "minecraft:wooden_shovel",
+      "ingredients": [
+        {
+          "id": "minecraft:oak_planks",
+          "count": 1
+        },
+        {
+          "id": "minecraft:stick",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "minecraft:wooden_hoe",
+      "ingredients": [
+        {
+          "id": "minecraft:oak_planks",
+          "count": 2
+        },
+        {
+          "id": "minecraft:stick",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "minecraft:stone_sword",
+      "ingredients": [
+        {
+          "id": "minecraft:cobblestone",
+          "count": 2
+        },
+        {
+          "id": "minecraft:stick",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "minecraft:stone_pickaxe",
+      "ingredients": [
+        {
+          "id": "minecraft:cobblestone",
+          "count": 3
+        },
+        {
+          "id": "minecraft:stick",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "minecraft:stone_axe",
+      "ingredients": [
+        {
+          "id": "minecraft:cobblestone",
+          "count": 3
+        },
+        {
+          "id": "minecraft:stick",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "minecraft:stone_shovel",
+      "ingredients": [
+        {
+          "id": "minecraft:cobblestone",
+          "count": 1
+        },
+        {
+          "id": "minecraft:stick",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "minecraft:stone_hoe",
+      "ingredients": [
+        {
+          "id": "minecraft:cobblestone",
+          "count": 2
+        },
+        {
+          "id": "minecraft:stick",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "minecraft:copper_sword",
+      "ingredients": [
+        {
+          "id": "minecraft:copper_ingot",
+          "count": 2
+        },
+        {
+          "id": "minecraft:stick",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "minecraft:copper_pickaxe",
+      "ingredients": [
+        {
+          "id": "minecraft:copper_ingot",
+          "count": 3
+        },
+        {
+          "id": "minecraft:stick",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "minecraft:copper_axe",
+      "ingredients": [
+        {
+          "id": "minecraft:copper_ingot",
+          "count": 3
+        },
+        {
+          "id": "minecraft:stick",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "minecraft:copper_shovel",
+      "ingredients": [
+        {
+          "id": "minecraft:copper_ingot",
+          "count": 1
+        },
+        {
+          "id": "minecraft:stick",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "minecraft:copper_hoe",
+      "ingredients": [
+        {
+          "id": "minecraft:copper_ingot",
+          "count": 2
+        },
+        {
+          "id": "minecraft:stick",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "minecraft:iron_sword",
+      "ingredients": [
+        {
+          "id": "minecraft:iron_ingot",
+          "count": 2
+        },
+        {
+          "id": "minecraft:stick",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "minecraft:iron_pickaxe",
+      "ingredients": [
+        {
+          "id": "minecraft:iron_ingot",
+          "count": 3
+        },
+        {
+          "id": "minecraft:stick",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "minecraft:iron_axe",
+      "ingredients": [
+        {
+          "id": "minecraft:iron_ingot",
+          "count": 3
+        },
+        {
+          "id": "minecraft:stick",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "minecraft:iron_shovel",
+      "ingredients": [
+        {
+          "id": "minecraft:iron_ingot",
+          "count": 1
+        },
+        {
+          "id": "minecraft:stick",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "minecraft:iron_hoe",
+      "ingredients": [
+        {
+          "id": "minecraft:iron_ingot",
+          "count": 2
+        },
+        {
+          "id": "minecraft:stick",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "minecraft:golden_sword",
+      "ingredients": [
+        {
+          "id": "minecraft:gold_ingot",
+          "count": 2
+        },
+        {
+          "id": "minecraft:stick",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "minecraft:golden_pickaxe",
+      "ingredients": [
+        {
+          "id": "minecraft:gold_ingot",
+          "count": 3
+        },
+        {
+          "id": "minecraft:stick",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "minecraft:golden_axe",
+      "ingredients": [
+        {
+          "id": "minecraft:gold_ingot",
+          "count": 3
+        },
+        {
+          "id": "minecraft:stick",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "minecraft:golden_shovel",
+      "ingredients": [
+        {
+          "id": "minecraft:gold_ingot",
+          "count": 1
+        },
+        {
+          "id": "minecraft:stick",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "minecraft:golden_hoe",
+      "ingredients": [
+        {
+          "id": "minecraft:gold_ingot",
+          "count": 2
+        },
+        {
+          "id": "minecraft:stick",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "minecraft:diamond_sword",
+      "ingredients": [
+        {
+          "id": "minecraft:diamond",
+          "count": 2
+        },
+        {
+          "id": "minecraft:stick",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "minecraft:diamond_pickaxe",
+      "ingredients": [
+        {
+          "id": "minecraft:diamond",
+          "count": 3
+        },
+        {
+          "id": "minecraft:stick",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "minecraft:diamond_axe",
+      "ingredients": [
+        {
+          "id": "minecraft:diamond",
+          "count": 3
+        },
+        {
+          "id": "minecraft:stick",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "minecraft:diamond_shovel",
+      "ingredients": [
+        {
+          "id": "minecraft:diamond",
+          "count": 1
+        },
+        {
+          "id": "minecraft:stick",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "minecraft:diamond_hoe",
+      "ingredients": [
+        {
+          "id": "minecraft:diamond",
+          "count": 2
+        },
+        {
+          "id": "minecraft:stick",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "minecraft:leather_helmet",
+      "ingredients": [
+        {
+          "id": "minecraft:leather",
+          "count": 5
+        }
+      ]
+    },
+    {
+      "id": "minecraft:leather_chestplate",
+      "ingredients": [
+        {
+          "id": "minecraft:leather",
+          "count": 8
+        }
+      ]
+    },
+    {
+      "id": "minecraft:leather_leggings",
+      "ingredients": [
+        {
+          "id": "minecraft:leather",
+          "count": 7
+        }
+      ]
+    },
+    {
+      "id": "minecraft:leather_boots",
+      "ingredients": [
+        {
+          "id": "minecraft:leather",
+          "count": 4
+        }
+      ]
+    },
+    {
+      "id": "minecraft:copper_helmet",
+      "ingredients": [
+        {
+          "id": "minecraft:copper_ingot",
+          "count": 5
+        }
+      ]
+    },
+    {
+      "id": "minecraft:copper_chestplate",
+      "ingredients": [
+        {
+          "id": "minecraft:copper_ingot",
+          "count": 8
+        }
+      ]
+    },
+    {
+      "id": "minecraft:copper_leggings",
+      "ingredients": [
+        {
+          "id": "minecraft:copper_ingot",
+          "count": 7
+        }
+      ]
+    },
+    {
+      "id": "minecraft:copper_boots",
+      "ingredients": [
+        {
+          "id": "minecraft:copper_ingot",
+          "count": 4
+        }
+      ]
+    },
+    {
+      "id": "minecraft:iron_helmet",
+      "ingredients": [
+        {
+          "id": "minecraft:iron_ingot",
+          "count": 5
+        }
+      ]
+    },
+    {
+      "id": "minecraft:iron_chestplate",
+      "ingredients": [
+        {
+          "id": "minecraft:iron_ingot",
+          "count": 8
+        }
+      ]
+    },
+    {
+      "id": "minecraft:iron_leggings",
+      "ingredients": [
+        {
+          "id": "minecraft:iron_ingot",
+          "count": 7
+        }
+      ]
+    },
+    {
+      "id": "minecraft:iron_boots",
+      "ingredients": [
+        {
+          "id": "minecraft:iron_ingot",
+          "count": 4
+        }
+      ]
+    },
+    {
+      "id": "minecraft:golden_helmet",
+      "ingredients": [
+        {
+          "id": "minecraft:gold_ingot",
+          "count": 5
+        }
+      ]
+    },
+    {
+      "id": "minecraft:golden_chestplate",
+      "ingredients": [
+        {
+          "id": "minecraft:gold_ingot",
+          "count": 8
+        }
+      ]
+    },
+    {
+      "id": "minecraft:golden_leggings",
+      "ingredients": [
+        {
+          "id": "minecraft:gold_ingot",
+          "count": 7
+        }
+      ]
+    },
+    {
+      "id": "minecraft:golden_boots",
+      "ingredients": [
+        {
+          "id": "minecraft:gold_ingot",
+          "count": 4
+        }
+      ]
+    },
+    {
+      "id": "minecraft:diamond_helmet",
+      "ingredients": [
+        {
+          "id": "minecraft:diamond",
+          "count": 5
+        }
+      ]
+    },
+    {
+      "id": "minecraft:diamond_chestplate",
+      "ingredients": [
+        {
+          "id": "minecraft:diamond",
+          "count": 8
+        }
+      ]
+    },
+    {
+      "id": "minecraft:diamond_leggings",
+      "ingredients": [
+        {
+          "id": "minecraft:diamond",
+          "count": 7
+        }
+      ]
+    },
+    {
+      "id": "minecraft:diamond_boots",
+      "ingredients": [
+        {
+          "id": "minecraft:diamond",
+          "count": 4
+        }
+      ]
+    },
+    {
+      "id": "minecraft:netherite_sword",
+      "ingredients": [
+        {
+          "id": "minecraft:diamond_sword",
+          "count": 1
+        },
+        {
+          "id": "minecraft:netherite_ingot",
+          "count": 1
+        },
+        {
+          "id": "minecraft:netherite_upgrade_smithing_template",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "minecraft:netherite_pickaxe",
+      "ingredients": [
+        {
+          "id": "minecraft:diamond_pickaxe",
+          "count": 1
+        },
+        {
+          "id": "minecraft:netherite_ingot",
+          "count": 1
+        },
+        {
+          "id": "minecraft:netherite_upgrade_smithing_template",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "minecraft:netherite_axe",
+      "ingredients": [
+        {
+          "id": "minecraft:diamond_axe",
+          "count": 1
+        },
+        {
+          "id": "minecraft:netherite_ingot",
+          "count": 1
+        },
+        {
+          "id": "minecraft:netherite_upgrade_smithing_template",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "minecraft:netherite_shovel",
+      "ingredients": [
+        {
+          "id": "minecraft:diamond_shovel",
+          "count": 1
+        },
+        {
+          "id": "minecraft:netherite_ingot",
+          "count": 1
+        },
+        {
+          "id": "minecraft:netherite_upgrade_smithing_template",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "minecraft:netherite_hoe",
+      "ingredients": [
+        {
+          "id": "minecraft:diamond_hoe",
+          "count": 1
+        },
+        {
+          "id": "minecraft:netherite_ingot",
+          "count": 1
+        },
+        {
+          "id": "minecraft:netherite_upgrade_smithing_template",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "minecraft:netherite_helmet",
+      "ingredients": [
+        {
+          "id": "minecraft:diamond_helmet",
+          "count": 1
+        },
+        {
+          "id": "minecraft:netherite_ingot",
+          "count": 1
+        },
+        {
+          "id": "minecraft:netherite_upgrade_smithing_template",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "minecraft:netherite_chestplate",
+      "ingredients": [
+        {
+          "id": "minecraft:diamond_chestplate",
+          "count": 1
+        },
+        {
+          "id": "minecraft:netherite_ingot",
+          "count": 1
+        },
+        {
+          "id": "minecraft:netherite_upgrade_smithing_template",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "minecraft:netherite_leggings",
+      "ingredients": [
+        {
+          "id": "minecraft:diamond_leggings",
+          "count": 1
+        },
+        {
+          "id": "minecraft:netherite_ingot",
+          "count": 1
+        },
+        {
+          "id": "minecraft:netherite_upgrade_smithing_template",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "minecraft:netherite_boots",
+      "ingredients": [
+        {
+          "id": "minecraft:diamond_boots",
+          "count": 1
+        },
+        {
+          "id": "minecraft:netherite_ingot",
+          "count": 1
+        },
+        {
+          "id": "minecraft:netherite_upgrade_smithing_template",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "minecraft:tripwire_hook",
+      "outputCount": 2,
+      "ingredients": [
+        {
+          "id": "minecraft:iron_ingot",
+          "count": 1
+        },
+        {
+          "id": "minecraft:stick",
+          "count": 1
+        },
+        {
+          "id": "minecraft:oak_planks",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "minecraft:shield",
+      "ingredients": [
+        {
+          "id": "minecraft:oak_planks",
+          "count": 6
+        },
+        {
+          "id": "minecraft:iron_ingot",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "minecraft:crossbow",
+      "ingredients": [
+        {
+          "id": "minecraft:stick",
+          "count": 3
+        },
+        {
+          "id": "minecraft:string",
+          "count": 2
+        },
+        {
+          "id": "minecraft:iron_ingot",
+          "count": 1
+        },
+        {
+          "id": "minecraft:tripwire_hook",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "minecraft:fishing_rod",
+      "ingredients": [
+        {
+          "id": "minecraft:stick",
+          "count": 3
+        },
+        {
+          "id": "minecraft:string",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "minecraft:shears",
+      "ingredients": [
+        {
+          "id": "minecraft:iron_ingot",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "minecraft:brush",
+      "ingredients": [
+        {
+          "id": "minecraft:feather",
+          "count": 1
+        },
+        {
+          "id": "minecraft:copper_ingot",
+          "count": 1
+        },
+        {
+          "id": "minecraft:stick",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "minecraft:spyglass",
+      "ingredients": [
+        {
+          "id": "minecraft:amethyst_shard",
+          "count": 1
+        },
+        {
+          "id": "minecraft:copper_ingot",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "minecraft:compass",
+      "ingredients": [
+        {
+          "id": "minecraft:iron_ingot",
+          "count": 4
+        },
+        {
+          "id": "minecraft:redstone",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "minecraft:clock",
+      "ingredients": [
+        {
+          "id": "minecraft:gold_ingot",
+          "count": 4
+        },
+        {
+          "id": "minecraft:redstone",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "minecraft:bucket",
+      "ingredients": [
+        {
+          "id": "minecraft:iron_ingot",
+          "count": 3
+        }
+      ]
+    },
+    {
+      "id": "minecraft:flint_and_steel",
+      "ingredients": [
+        {
+          "id": "minecraft:iron_ingot",
+          "count": 1
+        },
+        {
+          "id": "minecraft:flint",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "minecraft:fire_charge",
+      "ingredients": [
+        {
+          "id": "minecraft:blaze_powder",
+          "count": 1
+        },
+        {
+          "id": "minecraft:coal",
+          "count": 1
+        },
+        {
+          "id": "minecraft:gunpowder",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "minecraft:lead",
+      "ingredients": [
+        {
+          "id": "minecraft:string",
+          "count": 4
+        },
+        {
+          "id": "minecraft:slime_ball",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "minecraft:minecart",
+      "ingredients": [
+        {
+          "id": "minecraft:iron_ingot",
+          "count": 5
+        }
+      ]
+    },
+    {
+      "id": "minecraft:chest_minecart",
+      "ingredients": [
+        {
+          "id": "minecraft:minecart",
+          "count": 1
+        },
+        {
+          "id": "minecraft:chest",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "minecraft:hopper_minecart",
+      "ingredients": [
+        {
+          "id": "minecraft:minecart",
+          "count": 1
+        },
+        {
+          "id": "minecraft:hopper",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "minecraft:furnace_minecart",
+      "ingredients": [
+        {
+          "id": "minecraft:minecart",
+          "count": 1
+        },
+        {
+          "id": "minecraft:furnace",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "minecraft:tnt_minecart",
+      "ingredients": [
+        {
+          "id": "minecraft:minecart",
+          "count": 1
+        },
+        {
+          "id": "minecraft:tnt",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "minecraft:bundle",
+      "ingredients": [
+        {
+          "id": "minecraft:leather",
+          "count": 1
+        },
+        {
+          "id": "minecraft:string",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "minecraft:book",
+      "ingredients": [
+        {
+          "id": "minecraft:paper",
+          "count": 3
+        },
+        {
+          "id": "minecraft:leather",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "minecraft:writable_book",
+      "ingredients": [
+        {
+          "id": "minecraft:book",
+          "count": 1
+        },
+        {
+          "id": "minecraft:ink_sac",
+          "count": 1
+        },
+        {
+          "id": "minecraft:feather",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "minecraft:map",
+      "ingredients": [
+        {
+          "id": "minecraft:compass",
+          "count": 1
+        },
+        {
+          "id": "minecraft:paper",
+          "count": 8
+        }
+      ]
+    },
+    {
+      "id": "minecraft:filled_map",
+      "ingredients": [
+        {
+          "id": "minecraft:map",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "minecraft:ender_eye",
+      "ingredients": [
+        {
+          "id": "minecraft:ender_pearl",
+          "count": 1
+        },
+        {
+          "id": "minecraft:blaze_powder",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "minecraft:end_crystal",
+      "ingredients": [
+        {
+          "id": "minecraft:glass",
+          "count": 7
+        },
+        {
+          "id": "minecraft:ender_eye",
+          "count": 1
+        },
+        {
+          "id": "minecraft:ghast_tear",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "minecraft:golden_apple",
+      "ingredients": [
+        {
+          "id": "minecraft:gold_ingot",
+          "count": 8
+        },
+        {
+          "id": "minecraft:apple",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "minecraft:iron_nugget",
+      "outputCount": 9,
+      "ingredients": [
+        {
+          "id": "minecraft:iron_ingot",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "minecraft:lantern",
+      "ingredients": [
+        {
+          "id": "minecraft:iron_nugget",
+          "count": 8
+        },
+        {
+          "id": "minecraft:torch",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "minecraft:turtle_helmet",
+      "ingredients": [
+        {
+          "id": "minecraft:scute",
+          "count": 5
+        }
+      ]
+    },
+    {
+      "id": "minecraft:armor_stand",
+      "ingredients": [
+        {
+          "id": "minecraft:stick",
+          "count": 6
+        },
+        {
+          "id": "minecraft:smooth_stone_slab",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "minecraft:painting",
+      "ingredients": [
+        {
+          "id": "minecraft:stick",
+          "count": 8
+        },
+        {
+          "id": "minecraft:white_wool",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "minecraft:music_disc_5",
+      "ingredients": [
+        {
+          "id": "minecraft:disc_fragment_5",
+          "count": 9
+        }
+      ]
+    },
+    {
+      "id": "minecraft:dried_ghast",
+      "ingredients": [
+        {
+          "id": "minecraft:ghast_tear",
+          "count": 8
+        },
+        {
+          "id": "minecraft:soul_sand",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "minecraft:blue_ice",
+      "ingredients": [
+        {
+          "id": "minecraft:packed_ice",
+          "count": 9
+        }
+      ]
+    },
+    {
+      "id": "minecraft:beehive",
+      "ingredients": [
+        {
+          "id": "minecraft:oak_planks",
+          "count": 6
+        },
+        {
+          "id": "minecraft:honeycomb",
+          "count": 3
+        }
+      ]
+    },
+    {
+      "id": "minecraft:glowstone",
+      "ingredients": [
+        {
+          "id": "minecraft:glowstone_dust",
+          "count": 4
+        }
+      ]
+    },
+    {
+      "id": "minecraft:magma_block",
+      "ingredients": [
+        {
+          "id": "minecraft:magma_cream",
+          "count": 4
+        }
+      ]
+    },
+    {
+      "id": "minecraft:trapped_chest",
+      "ingredients": [
+        {
+          "id": "minecraft:chest",
+          "count": 1
+        },
+        {
+          "id": "minecraft:tripwire_hook",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "minecraft:copper_chest",
+      "ingredients": [
+        {
+          "id": "minecraft:copper_ingot",
+          "count": 8
+        },
+        {
+          "id": "minecraft:chest",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "minecraft:waxed_copper_block",
+      "ingredients": [
+        {
+          "id": "minecraft:copper_block",
+          "count": 1
+        },
+        {
+          "id": "minecraft:honeycomb",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "minecraft:iron_trapdoor",
+      "ingredients": [
+        {
+          "id": "minecraft:iron_ingot",
+          "count": 4
+        }
+      ]
+    },
+    {
+      "id": "minecraft:copper_bulb",
+      "outputCount": 4,
+      "ingredients": [
+        {
+          "id": "minecraft:copper_block",
+          "count": 3
+        },
+        {
+          "id": "minecraft:blaze_rod",
+          "count": 1
+        },
+        {
+          "id": "minecraft:redstone",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "minecraft:calibrated_sculk_sensor",
+      "ingredients": [
+        {
+          "id": "minecraft:amethyst_shard",
+          "count": 3
+        },
+        {
+          "id": "minecraft:sculk_sensor",
+          "count": 1
+        }
+      ]
+    }
   ]
 }

@@ -49,9 +49,9 @@
       }
     },
     {
-      "name": "dragon_egg_denied",
+      "name": "dragon_egg_world_limited",
       "states": [{ "name": "minecraft:dragon_egg", "properties": {} }],
-      "expect": { "decision": "reject", "contains": "minecraft:dragon_egg" }
+      "expect": { "decision": "allow" }
     },
     {
       "name": "potted_plant_normalized",

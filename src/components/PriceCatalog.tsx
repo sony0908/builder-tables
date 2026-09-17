@@ -78,10 +78,10 @@ export function PriceCatalog({ assetFile }: { assetFile: File | null }) {
     <section id="prices" className="price-catalog" aria-label="Catálogo de precios">
       <div className="price-catalog-heading">
         <div>
-          <span className="eyebrow">Tarifario Java 26.2</span>
+          <span className="eyebrow">Tarifario survival estricto · Java 26.2</span>
           <h2>Precio de cada bloque</h2>
           <p>
-            El generador suma el valor de los bloques compatibles y redondea el
+            El generador cobra una entrega de supervivencia estricta y redondea el
             resultado al siguiente esmeralda completo.
           </p>
         </div>
@@ -104,8 +104,11 @@ export function PriceCatalog({ assetFile }: { assetFile: File | null }) {
           />
         </label>
         <p className="price-catalog-note">
-          El precio se calcula automáticamente. El JSON asociado solo puede
-          aportar el nombre; un campo <code>price</code> se rechaza.
+          El precio es automático: el catálogo incorpora referencias de comercio survival
+          y aplica el mayor entre su categoría y los pisos de receta con 15 % de
+          recargo. Un campo <code>price</code> manual se rechaza. El contenido de
+          inventarios solo acepta ítems vanilla con precio explícito y componentes
+          decorativos o de almacenamiento.
         </p>
       </div>
       <div className="price-groups">

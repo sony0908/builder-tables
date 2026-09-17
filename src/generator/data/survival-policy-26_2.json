@@ -28,7 +28,8 @@
     { "id": "minecraft:trial_spawner", "reason": "No se puede obtener ni mover en survival." },
     { "id": "minecraft:vault", "reason": "No se puede mover en survival." },
     { "id": "minecraft:frosted_ice", "reason": "Estado temporal no conservable." },
-    { "id": "minecraft:dragon_egg", "reason": "No se permite en construcciones generadas: el mundo solo ofrece uno." },
+    { "id": "minecraft:trial_key", "reason": "Llave de Vault: se obtiene jugando Trial Chambers, no mediante planos." },
+    { "id": "minecraft:ominous_trial_key", "reason": "Llave de Vault ominosa: se obtiene jugando Trial Chambers, no mediante planos." },
     { "id": "minecraft:debug_stick", "reason": "Herramienta exclusiva de Creative." },
     { "id": "minecraft:knowledge_book", "reason": "Ítem técnico de comandos." },
     { "id": "minecraft:command_block_minecart", "reason": "Vehículo de operador no obtenible en survival." },
@@ -58,6 +59,19 @@
       "priceMode": "replace",
       "notice": "Nieve en polvo declarada como fuente mediante cubeta.",
       "requirements": [{ "id": "minecraft:powder_snow_bucket", "count": 1 }]
+    },
+    {
+      "id": "dragon_egg_world_limit",
+      "classification": "special",
+      "match": { "ids": ["minecraft:dragon_egg"] },
+      "priceMode": "keep",
+      "notice": "Dragon egg permitido como pieza única del mundo y con coste excepcional.",
+      "requirements": [],
+      "worldLimit": {
+        "scope": "world",
+        "maximum": 1,
+        "note": "El mundo solo puede recibir un dragon egg mediante Builder Tables."
+      }
     },
     {
       "id": "water_cauldron",
@@ -274,7 +288,7 @@
       "classification": "special",
       "match": { "ids": ["minecraft:frogspawn"] },
       "priceMode": "replace",
-      "notice": "Frogspawn permitido como decoración de ciclo de vida excepcional: 64 esmeraldas por unidad.",
+      "notice": "Frogspawn permitido como decoración de ciclo de vida excepcional: 128 esmeraldas por unidad.",
       "requirements": [
         { "id": "minecraft:frogspawn", "count": 1 },
         { "id": "minecraft:frog", "count": 2, "billable": false },

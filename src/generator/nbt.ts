@@ -8,8 +8,9 @@ import type {
 } from './types'
 import { splitStructureRegions, type StructureSize } from './geometry'
 import { VANILLA_BLOCK_IDS_26_2 } from './vanilla-blocks-26_2'
-import { calculateStructurePrice } from './pricing'
+import { calculateStructurePrice, MAX_MINECRAFT_SCORE } from './pricing'
 import {
+  applyPolicyEntity,
   applyPolicyItem,
   applyPolicyState,
   createPolicyAccumulator,
@@ -126,10 +127,121 @@ const ITEM_STACK_FIELDS = new Set([
   'minecraft:container',
   'minecraft:bundle_contents',
   'minecraft:charged_projectiles',
+  'minecraft:use_remainder',
+  'equipment',
+  'mainhand',
+  'offhand',
+  'feet',
+  'legs',
+  'chest',
+  'head',
+  'body',
+  'body_armor_item',
+  'buy',
+  'buyB',
+  'sell',
+  'Buy',
+  'BuyB',
+  'Sell',
+])
+
+const LOOT_TABLE_KEYS = new Set([
+  'LootTable',
+  'loot_table',
+  'minecraft:container_loot',
+  'minecraft:loot_table',
+  'DeathLootTable',
+  'death_loot_table',
+])
+const ENTITY_PAYLOAD_KEYS = new Set([
+  'Passengers',
+  'passengers',
+  'Riding',
+  'Bees',
+  'bees',
+  'minecraft:bees',
+  'EntityData',
+  'entity_data',
+  'BucketEntityData',
+  'bucket_entity_data',
+  'minecraft:bucket_entity_data',
+  'minecraft:entity_data',
+  'EntityTag',
+  'Tags',
+  'tags',
+])
+/**
+ * Only presentation and storage data survive inside an embedded item stack.
+ * Any unlisted component can change gameplay or become a new unpriced route,
+ * so it is rejected until it has a deliberate price/policy decision.
+ */
+const SAFE_ITEM_COMPONENTS = new Set([
+  'minecraft:banner_patterns',
+  'minecraft:base_color',
+  'minecraft:bundle_contents',
+  'minecraft:container',
+  'minecraft:custom_model_data',
+  'minecraft:custom_name',
+  'minecraft:damage',
+  'minecraft:dyed_color',
+  'minecraft:lore',
+  'minecraft:map_color',
+  'minecraft:pot_decorations',
+  'minecraft:repair_cost',
+])
+const SAFE_LEGACY_ITEM_FIELDS = new Set([
+  'CustomModelData',
+  'Damage',
+  'HideFlags',
+  'RepairCost',
+  'SkullOwner',
+  'display',
 ])
 
 function isNbtRecord(value: unknown): value is NbtRecord {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value)
+}
+
+function unsafeItemStackReason(record: NbtRecord) {
+  const itemId = typeof record.id === 'string' ? record.id : ''
+
+  for (const componentField of ['components', 'Components']) {
+    const components = record[componentField]
+    if (!isNbtRecord(components)) continue
+
+    for (const key of Object.keys(components)) {
+      if (!SAFE_ITEM_COMPONENTS.has(key)) {
+        return 'El ítem ' + itemId + ' contiene el componente no permitido ' + key + '.'
+      }
+    }
+  }
+
+  for (const legacyField of ['tag', 'Tag']) {
+    const legacy = record[legacyField]
+    if (!isNbtRecord(legacy)) continue
+
+    for (const key of Object.keys(legacy)) {
+      if (!SAFE_LEGACY_ITEM_FIELDS.has(key)) {
+        return 'El ítem ' + itemId + ' contiene el dato legacy no permitido ' + key + '.'
+      }
+    }
+  }
+
+  return undefined
+}
+
+function lootTableReason(record: NbtRecord) {
+  const key = Object.keys(record).find((candidate) => LOOT_TABLE_KEYS.has(candidate))
+  return key
+    ? 'El NBT interno contiene ' + key + ', que podría generar botín no tasado.'
+    : undefined
+}
+
+function entityPayloadReason(record: NbtRecord) {
+  const key = Object.keys(record).find((candidate) => ENTITY_PAYLOAD_KEYS.has(candidate))
+  return key
+    ? 'El NBT interno contiene ' + key + ', que podría generar una entidad no autorizada.'
+    : undefined
 }
 
 function itemStackCount(record: NbtRecord, location: string) {
@@ -192,12 +304,20 @@ export function validateEmbeddedItemsForPolicy(
     if (seen.has(current)) return undefined
     seen.add(current)
 
+    const lootError = lootTableReason(current)
+    if (lootError) return lootError
+    const entityPayloadError = entityPayloadReason(current)
+    if (entityPayloadError) return entityPayloadError
+
     let childMultiplier = multiplier
     if (
       parentKey &&
       ITEM_STACK_FIELDS.has(parentKey) &&
       typeof current.id === 'string'
     ) {
+      const componentError = unsafeItemStackReason(current)
+      if (componentError) return componentError
+
       const parsedCount = itemStackCount(current, location)
       if ('error' in parsedCount) return parsedCount.error
 
@@ -546,10 +666,23 @@ async function processInput(
         rawEntity,
         'La lista de entidades contiene una entrada inválida.',
       )
-      if (entity.nbt === undefined) continue
+      const entityNbt = asRecord(
+        entity.nbt,
+        'El NBT de la entidad #' + index + ' es inválido.',
+      )
+      if (typeof entityNbt.id !== 'string') {
+        throw new Error('La entidad #' + index + ' no tiene un ID válido.')
+      }
+
+      const entityError = applyPolicyEntity(
+        policyAccumulator,
+        entityNbt.id,
+        'la entidad #' + index,
+      )
+      if (entityError) throw new Error(entityError)
 
       const error = validateEmbeddedItemsForPolicy(
-        entity.nbt,
+        entityNbt,
         'la entidad #' + index,
         policyAccumulator,
       )
@@ -590,6 +723,14 @@ async function processInput(
     .map(([name, count]) => ({ name, count }))
     .sort((left, right) => right.count - left.count)
   const automaticPrice = calculateStructurePrice(materialCounts, policy.pricing)
+  if (
+    !Number.isSafeInteger(automaticPrice) ||
+    automaticPrice > MAX_MINECRAFT_SCORE
+  ) {
+    throw new Error(
+      'El precio de la estructura supera el máximo que Minecraft puede cobrar de forma segura.',
+    )
+  }
 
   const analysis: StructureAnalysis = {
     key: input.key,
