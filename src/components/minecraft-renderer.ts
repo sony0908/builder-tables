@@ -1,5 +1,6 @@
 import type { Box3, Object3D, PerspectiveCamera } from 'three'
 import * as Three from 'three'
+import type { MinecraftVersion } from '../generator/version-profiles'
 
 export type MinecraftSceneBlock = {
   id: string
@@ -58,7 +59,7 @@ const BMR_ASSETS_PATH =
   import.meta.env.BASE_URL + 'vendor/block-model-renderer/assets.zip'
 
 let minecraftRendererPromise: Promise<MinecraftRendererModule> | null = null
-const preparedAssets = new WeakMap<File, Promise<unknown>>()
+const preparedAssets = new WeakMap<File, Map<MinecraftVersion, Promise<unknown>>>()
 
 export function getMinecraftRenderer() {
   if (!minecraftRendererPromise) {
@@ -80,15 +81,21 @@ export function getMinecraftRenderer() {
 export async function getPreparedAssets(
   renderer: MinecraftRendererModule,
   assetFile: File,
+  version: MinecraftVersion,
 ) {
-  let promise = preparedAssets.get(assetFile)
+  let byVersion = preparedAssets.get(assetFile)
+  if (!byVersion) {
+    byVersion = new Map()
+    preparedAssets.set(assetFile, byVersion)
+  }
+  let promise = byVersion.get(version)
   if (!promise) {
     promise = renderer.prepareAssets([assetFile], {
       cache: true,
-      version: '26.2',
+      version,
       defaults: 'game',
     })
-    preparedAssets.set(assetFile, promise)
+    byVersion.set(version, promise)
   }
   return promise
 }

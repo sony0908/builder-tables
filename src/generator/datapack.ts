@@ -5,6 +5,7 @@ import { addDynamicAssets } from './dynamics'
 import { addPreviewFiles } from './preview'
 import { SURVIVAL_POLICY_METADATA } from './survival-policy'
 import type { StructureAnalysis, WorkerStructureInput } from './types'
+import { getVersionProfile, type MinecraftVersion } from './version-profiles'
 
 type GeneratedArchive = {
   archive: ArrayBuffer
@@ -18,12 +19,14 @@ function json(value: unknown) {
 
 export async function generateArchive(
   inputs: WorkerStructureInput[],
+  targetVersion: MinecraftVersion = '26.2',
 ): Promise<GeneratedArchive> {
   if (!inputs.length) {
     throw new Error('Añade al menos una estructura antes de generar.')
   }
 
   const structures = await prepareStructures(inputs)
+  const profile = getVersionProfile(targetVersion)
   const files: Record<string, Uint8Array> = {}
   const put = (path: string, content: string) => {
     files[path] = strToU8(content)
@@ -34,10 +37,10 @@ export async function generateArchive(
 
   putJson('pack.mcmeta', {
     pack: {
-      min_format: [107, 1],
-      max_format: [107, 1],
+      min_format: profile.packFormat,
+      max_format: profile.packFormat,
       description:
-        'Builder Tables - POC Bloque de Planificación para Java 26.2',
+        'Builder Tables - Bloque de Planificación para ' + profile.label,
     },
   })
   putJson('data/minecraft/tags/function/load.json', {
@@ -77,7 +80,7 @@ export async function generateArchive(
   addPreviewFiles(put, structures)
 
   const report = [
-    'BUILDER TABLES 26.2 - POC BLOQUE DE PLANIFICACIÓN',
+    'BUILDER TABLES ' + targetVersion + ' - BLOQUE DE PLANIFICACIÓN',
     '',
     ...structures.flatMap((structure) => {
       const { analysis } = structure

@@ -21,6 +21,7 @@ import {
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import { Maximize2, RotateCcw } from 'lucide-react'
 import type { ViewerModel } from '../generator/types'
+import type { MinecraftVersion } from '../generator/version-profiles'
 import {
   getMinecraftRenderer,
   getPreparedAssets,
@@ -33,6 +34,7 @@ type StructureViewerProps = {
   model: ViewerModel
   theme: 'light' | 'dark'
   assetFile: File | null
+  version: MinecraftVersion
 }
 
 type ViewPreset = 'isometric' | 'top' | 'front' | 'right'
@@ -97,6 +99,7 @@ export function MinecraftStructureViewer({
   model,
   theme,
   assetFile,
+  version,
 }: StructureViewerProps) {
   const rootRef = useRef<HTMLDivElement>(null)
   const hostRef = useRef<HTMLDivElement>(null)
@@ -344,7 +347,7 @@ export function MinecraftStructureViewer({
       void (async () => {
         try {
           const minecraftRenderer = await getMinecraftRenderer()
-          const assets = await getPreparedAssets(minecraftRenderer, assetFile)
+          const assets = await getPreparedAssets(minecraftRenderer, assetFile, version)
           if (disposed) return
 
           const blocks: MinecraftSceneBlock[] = []
@@ -365,7 +368,7 @@ export function MinecraftStructureViewer({
 
           const handle = await minecraftRenderer.createScene(assets, blocks, {
             lighting: 'world',
-            version: '26.2',
+            version,
             defaults: 'game',
             optimize: true,
             shouldCancel: () => disposed,
@@ -415,7 +418,7 @@ export function MinecraftStructureViewer({
       renderer.dispose()
       renderer.domElement.remove()
     }
-  }, [assetFile, model, theme])
+  }, [assetFile, model, theme, version])
 
   if (model.positions.length !== model.states.length * 3) {
     return (

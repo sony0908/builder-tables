@@ -37,11 +37,12 @@ async function handle(request: WorkerRequest) {
       return
     }
 
-    const result = await generateArchive(request.structures)
+    const result = await generateArchive(request.structures, request.targetVersion)
     scope.postMessage(
       {
         type: 'generated',
         requestId: request.requestId,
+        targetVersion: request.targetVersion,
         archive: result.archive,
         report: result.report,
         structures: result.structures,

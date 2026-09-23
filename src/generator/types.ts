@@ -65,6 +65,8 @@ export type WorkerStructureInput = {
   nameOverride?: string
 }
 
+import type { MinecraftVersion } from './version-profiles'
+
 export type AnalysisResponse = {
   type: 'analysis'
   requestId: string
@@ -75,6 +77,7 @@ export type AnalysisResponse = {
 export type GenerationResponse = {
   type: 'generated'
   requestId: string
+  targetVersion: MinecraftVersion
   archive: ArrayBuffer
   report: string
   structures: StructureAnalysis[]
@@ -100,6 +103,7 @@ export type AnalyzeRequest = {
 export type GenerateRequest = {
   type: 'generate'
   requestId: string
+  targetVersion: MinecraftVersion
   structures: WorkerStructureInput[]
 }
 

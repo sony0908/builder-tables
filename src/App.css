@@ -126,6 +126,25 @@
   border: 1px solid #e8edf4;
 }
 
+.version-selector select {
+  min-width: 132px;
+  padding: 7px 26px 7px 10px;
+  color: #536078;
+  font: inherit;
+  font-size: 0.76rem;
+  font-weight: 700;
+  background: #f1f4f8;
+  border: 1px solid #e8edf4;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.theme-dark .version-selector select {
+  color: #c8d3e4;
+  background: #1b2b40;
+  border-color: #34465f;
+}
+
 .base-download,
 .secondary-button,
 .primary-button,

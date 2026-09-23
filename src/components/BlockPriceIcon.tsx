@@ -39,7 +39,7 @@ function getThumbnail(assetFile: File, blockId: string) {
   if (!thumbnail) {
     thumbnail = enqueueRender(async () => {
       const renderer = await getMinecraftRenderer()
-      const assets = await getPreparedAssets(renderer, assetFile)
+      const assets = await getPreparedAssets(renderer, assetFile, '26.2')
       return renderer.renderBlock({
         id: blockId,
         assets,

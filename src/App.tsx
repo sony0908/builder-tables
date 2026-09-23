@@ -27,6 +27,11 @@ import type {
   WorkerResponse,
   WorkerStructureInput,
 } from './generator/types'
+import {
+  getVersionProfile,
+  VERSION_PROFILES,
+  type MinecraftVersion,
+} from './generator/version-profiles'
 import { PriceCatalog } from './components/PriceCatalog'
 import './App.css'
 
@@ -41,9 +46,6 @@ type UploadedStructure = {
   analysis?: StructureAnalysis
   phase: StructurePhase
 }
-
-const BASE_PACK = '/downloads/BuilderTables_26.2_controller_menu_v2.zip'
-const GENERATED_PACK = 'BuilderTables_26.2_generated.zip'
 
 const StructureViewer = lazy(async () => {
   const module = await import('./components/MinecraftStructureViewer')
@@ -86,10 +88,10 @@ function phaseLabel(structure: UploadedStructure) {
   return 'En cola'
 }
 
-function downloadArchive(url: string) {
+function downloadArchive(url: string, filename: string) {
   const anchor = document.createElement('a')
   anchor.href = url
-  anchor.download = GENERATED_PACK
+  anchor.download = filename
   anchor.click()
 }
 
@@ -110,6 +112,13 @@ async function buildWorkerInputs(
 }
 
 function App() {
+  const [targetVersion, setTargetVersion] = useState<MinecraftVersion>(() => {
+    const saved = localStorage.getItem('builder-tables-target-version')
+    return VERSION_PROFILES.some((profile) => profile.id === saved)
+      ? saved as MinecraftVersion
+      : '26.2'
+  })
+  const versionProfile = getVersionProfile(targetVersion)
   const [structures, setStructures] = useState<UploadedStructure[]>([])
   const [isDragging, setIsDragging] = useState(false)
   const [theme, setTheme] = useState<'light' | 'dark'>(
@@ -215,7 +224,10 @@ function App() {
         setDownloadUrl(nextUrl)
         setGenerationError('')
         setGenerationState('ready')
-        downloadArchive(nextUrl)
+        downloadArchive(
+          nextUrl,
+          getVersionProfile(response.targetVersion).generatedArchive,
+        )
         return
       }
 
@@ -396,8 +408,18 @@ function App() {
   }
 
   const rememberBaseDownload = () => {
-    localStorage.setItem('builder-tables-base-26-2', 'true')
+    localStorage.setItem(versionProfile.storageKey, 'true')
     setBaseDownloaded(true)
+  }
+
+  const changeTargetVersion = (nextVersion: MinecraftVersion) => {
+    if (nextVersion === targetVersion) return
+    localStorage.setItem('builder-tables-target-version', nextVersion)
+    setTargetVersion(nextVersion)
+    const nextProfile = getVersionProfile(nextVersion)
+    setBaseDownloaded(localStorage.getItem(nextProfile.storageKey) === 'true')
+    setViewerAssetFile(null)
+    clearGeneratedDownload()
   }
 
   const toggleTheme = () => {
@@ -472,6 +494,7 @@ function App() {
         {
           type: 'generate',
           requestId,
+          targetVersion,
           structures: inputs,
         },
         inputs.map((input) => input.bytes),
@@ -511,7 +534,20 @@ function App() {
         </nav>
 
         <div className="header-actions">
-          <span className="version-badge">Java 26.2</span>
+          <label className="version-selector">
+            <span className="visually-hidden">Versión de Minecraft</span>
+            <select
+              value={targetVersion}
+              onChange={(event) => changeTargetVersion(event.target.value as MinecraftVersion)}
+              aria-label="Versión de Minecraft objetivo"
+            >
+              {VERSION_PROFILES.map((profile) => (
+                <option key={profile.id} value={profile.id}>
+                  {profile.label}{profile.stability === 'experimental' ? ' · prueba' : ''}
+                </option>
+              ))}
+            </select>
+          </label>
           <button
             className="theme-toggle"
             type="button"
@@ -528,7 +564,7 @@ function App() {
           </button>
           <a
             className="base-download"
-            href={BASE_PACK}
+            href={versionProfile.baseArchive}
             download
             onClick={rememberBaseDownload}
           >
@@ -687,11 +723,11 @@ function App() {
               </span>
               <span>
                 <PackageOpen size={16} />
-                Compatible con Java 26.2
+                {versionProfile.label} · {versionProfile.stability === 'stable' ? 'estable' : 'prueba en mundo'}
               </span>
               <span>
                 <FileArchive size={16} />
-                Salida: {GENERATED_PACK}
+                Salida: {versionProfile.generatedArchive}
               </span>
             </div>
           </section>
@@ -723,7 +759,7 @@ function App() {
                     <small>
                       {viewerAssetFile
                         ? formatBytes(viewerAssetFile.size) + ' · solo en este navegador'
-                        : 'Selecciona client.jar 26.2 para usar modelos y texturas'}
+                        : 'Selecciona client.jar ' + targetVersion + ' para usar modelos y texturas'}
                     </small>
                   </div>
                   <div className="viewer-assets-actions">
@@ -795,6 +831,7 @@ function App() {
                   model={selectedViewer}
                   theme={theme}
                   assetFile={viewerAssetFile}
+                  version={targetVersion}
                 />
               </Suspense>
             ) : (
@@ -993,7 +1030,7 @@ function App() {
                 <a
                   className="generated-download"
                   href={downloadUrl}
-                  download={GENERATED_PACK}
+                  download={versionProfile.generatedArchive}
                 >
                   <Download size={16} />
                   Descargar ZIP
