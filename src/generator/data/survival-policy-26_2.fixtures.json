@@ -7,6 +7,11 @@
       "expect": { "decision": "reject", "contains": "minecraft:barrier" }
     },
     {
+      "name": "piston_transient_states_are_repaired_before_policy",
+      "states": [{ "name": "minecraft:piston_head", "properties": {} }],
+      "expect": { "decision": "allow" }
+    },
+    {
       "name": "water_source_dependency",
       "states": [{ "name": "minecraft:water", "properties": {} }],
       "expect": {

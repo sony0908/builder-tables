@@ -92,7 +92,7 @@ export async function generateArchive(
           analysis.price,
         ...analysis.removed.map(
           (removed) =>
-            '  eliminado (no compatible): ' +
+            '  eliminado o reparado (no compatible / estado transitorio): ' +
             removed.name +
             ' x ' +
             removed.count,

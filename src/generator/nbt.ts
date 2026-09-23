@@ -27,6 +27,16 @@ const AIR_BLOCKS = new Set([
 const UNSUPPORTED_26_2 = new Set([
   'minecraft:dark_oak_wall_hanging_sign',
 ])
+/**
+ * These are runtime pieces emitted while a piston is extending. They are not
+ * independently placeable blocks, so preserving them in a structure template
+ * would create a broken piston. Omitting them lets the surviving piston and
+ * its redstone circuit recreate the head normally when it is activated.
+ */
+const AUTO_REPAIRED_TRANSIENT_STATES = new Set([
+  'minecraft:moving_piston',
+  'minecraft:piston_head',
+])
 const VANILLA_BLOCK_IDS = new Set<string>(VANILLA_BLOCK_IDS_26_2)
 
 export type BlockState = {
@@ -394,7 +404,9 @@ function stateKey(state: BlockState) {
 }
 
 function shouldRemoveState(state: BlockState) {
-  return UNSUPPORTED_26_2.has(state.name) || !VANILLA_BLOCK_IDS.has(state.name)
+  return AUTO_REPAIRED_TRANSIENT_STATES.has(state.name) ||
+    UNSUPPORTED_26_2.has(state.name) ||
+    !VANILLA_BLOCK_IDS.has(state.name)
 }
 function parseMetadata(input: WorkerStructureInput) {
   const fallbackName = sourceStem(input.sourceName)
