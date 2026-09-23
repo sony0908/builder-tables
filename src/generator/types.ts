@@ -50,6 +50,8 @@ export type StructureAnalysis = {
   stateCount: number
   materials: MaterialCount[]
   removed: MaterialCount[]
+  /** Entidades NBT descartadas para que el plano no replique IA, botín o comercio. */
+  removedEntities: number
   policy?: PolicySummary
   status: 'ready' | 'rejected'
   error?: string

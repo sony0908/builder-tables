@@ -97,6 +97,9 @@ export async function generateArchive(
             ' x ' +
             removed.count,
         ),
+        ...(analysis.removedEntities
+          ? ['  entidades eliminadas automáticamente: ' + analysis.removedEntities]
+          : []),
         ...(analysis.policy?.dependencies ?? []).map(
           (dependency) =>
             '  dependencia survival: ' +

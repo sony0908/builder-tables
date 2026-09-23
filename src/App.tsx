@@ -78,7 +78,7 @@ function displayName(structure: UploadedStructure) {
 function phaseLabel(structure: UploadedStructure) {
   if (structure.phase === 'analyzing') return 'Analizando'
   if (structure.phase === 'ready') {
-    return structure.analysis?.removed.length
+    return structure.analysis?.removed.length || structure.analysis?.removedEntities
       ? 'Listo con ajustes'
       : 'Compatible'
   }
@@ -239,6 +239,7 @@ function App() {
                 stateCount: 0,
                 materials: [],
                 removed: [],
+                removedEntities: 0,
                 status: 'rejected',
                 error: response.message,
               },
@@ -421,7 +422,8 @@ function App() {
         structure.analysis?.status === 'ready',
     )
   const hasRemovedBlocks = structures.some(
-    (structure) => (structure.analysis?.removed.length ?? 0) > 0,
+    (structure) => (structure.analysis?.removed.length ?? 0) > 0 ||
+      (structure.analysis?.removedEntities ?? 0) > 0,
   )
   const canGenerate = allReady && generationState !== 'generating'
   const selectedViewer =
@@ -918,6 +920,11 @@ function App() {
                                 (dependency.billable ? '' : ' (informativa)'),
                             )
                             .join(', ')}
+                        </div>
+                      ) : null}
+                      {analysis?.status === 'ready' && analysis.removedEntities ? (
+                        <div className="removed-blocks-note">
+                          Entidades eliminadas automáticamente: {analysis.removedEntities}
                         </div>
                       ) : null}
                       {analysis?.status === 'ready' && analysis.policy?.embeddedItems.length ? (

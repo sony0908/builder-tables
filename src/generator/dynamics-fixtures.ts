@@ -15,6 +15,7 @@ function fixtureStructure(price: number): GeneratedStructure {
       stateCount: 1,
       materials: [],
       removed: [],
+      removedEntities: 0,
       status: 'ready',
     },
     states: [],

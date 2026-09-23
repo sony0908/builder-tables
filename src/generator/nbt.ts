@@ -10,7 +10,6 @@ import { splitStructureRegions, type StructureSize } from './geometry'
 import { VANILLA_BLOCK_IDS_26_2 } from './vanilla-blocks-26_2'
 import { calculateStructurePrice, MAX_MINECRAFT_SCORE } from './pricing'
 import {
-  applyPolicyEntity,
   applyPolicyItem,
   applyPolicyState,
   createPolicyAccumulator,
@@ -458,6 +457,7 @@ function rejected(
       stateCount: 0,
       materials: [],
       removed: [],
+      removedEntities: 0,
       status: 'rejected',
       error: input.sourceName + ': ' + message,
     },
@@ -667,40 +667,11 @@ async function processInput(
     if (error) throw new Error(error)
   }
 
-  if (root.entities !== undefined) {
-    const entities = asList(
-      root.entities,
-      'La lista de entidades de la estructura es inválida.',
-    )
-
-    for (const [index, rawEntity] of entities.entries()) {
-      const entity = asRecord(
-        rawEntity,
-        'La lista de entidades contiene una entrada inválida.',
-      )
-      const entityNbt = asRecord(
-        entity.nbt,
-        'El NBT de la entidad #' + index + ' es inválido.',
-      )
-      if (typeof entityNbt.id !== 'string') {
-        throw new Error('La entidad #' + index + ' no tiene un ID válido.')
-      }
-
-      const entityError = applyPolicyEntity(
-        policyAccumulator,
-        entityNbt.id,
-        'la entidad #' + index,
-      )
-      if (entityError) throw new Error(entityError)
-
-      const error = validateEmbeddedItemsForPolicy(
-        entityNbt,
-        'la entidad #' + index,
-        policyAccumulator,
-      )
-      if (error) throw new Error(error)
-    }
-  }
+  // Entities can carry AI, inventories, loot, passengers and other runtime
+  // state that a structure template must not reproduce. They are deliberately
+  // omitted instead of rejecting the entire construction.
+  const removedEntities = Array.isArray(root.entities) ? root.entities.length :
+    root.entities === undefined ? 0 : 1
 
   const policy = finalizePolicy(policyAccumulator)
   if (policy.error) throw new Error(policy.error)
@@ -717,6 +688,7 @@ async function processInput(
       oldBlocks,
     ),
   }
+  delete buildRoot.entities
 
   const viewerPalette: ViewerPaletteEntry[] = paletteStates.map((state) => ({
     name: state.name,
@@ -757,6 +729,7 @@ async function processInput(
     removed: [...removed.entries()]
       .map(([name, count]) => ({ name, count }))
       .sort((left, right) => left.name.localeCompare(right.name)),
+    removedEntities,
     policy: policy.summary,
     status: 'ready',
   }
