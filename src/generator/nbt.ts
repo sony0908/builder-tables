@@ -50,9 +50,15 @@ export type PreviewPart = {
   template: Uint8Array
 }
 
+export type StructureBlock = {
+  pos: StructureSize
+  state: BlockState
+}
+
 export type GeneratedStructure = {
   analysis: StructureAnalysis
   states: BlockState[]
+  blocks?: StructureBlock[]
   construction: Uint8Array
   previewParts: PreviewPart[]
 }
@@ -69,6 +75,7 @@ type ProcessedStructure = {
   analysis: StructureAnalysis
   viewer?: ViewerModel
   states?: BlockState[]
+  blocks?: StructureBlock[]
   construction?: Uint8Array
   previewParts?: PreviewPart[]
 }
@@ -787,6 +794,19 @@ async function processInput(
     })
   }
 
+  const structureBlocks: StructureBlock[] = keptBlocks.map(({ block, position }) => {
+    const rawState = block.state
+    const stateId = typeof rawState === 'number'
+      ? rawState
+      : typeof rawState === 'object' && rawState !== null && 'value' in rawState
+        ? Number((rawState as { value: unknown }).value)
+        : Number(rawState)
+    return {
+      pos: position,
+      state: paletteStates[stateId] ?? { name: 'minecraft:stone', properties: [] },
+    }
+  })
+
   return {
     analysis,
     viewer,
@@ -794,6 +814,7 @@ async function processInput(
       const nameOrder = left.name.localeCompare(right.name)
       return nameOrder || stateKey(left).localeCompare(stateKey(right))
     }),
+    blocks: structureBlocks,
     construction: await write(buildRoot, writeOptions),
     previewParts,
   }
@@ -910,6 +931,7 @@ export async function prepareStructures(inputs: WorkerStructureInput[]) {
     return {
       analysis: result.analysis,
       states: result.states,
+      blocks: result.blocks,
       construction: result.construction,
       previewParts: result.previewParts,
     } satisfies GeneratedStructure
