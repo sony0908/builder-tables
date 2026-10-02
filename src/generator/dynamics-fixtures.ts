@@ -1,5 +1,6 @@
 import { addDynamicAssets } from './dynamics'
 import { addControllerAssets } from './controller'
+import { addBankAssets } from './bank'
 import type { GeneratedStructure } from './nbt'
 
 function fixtureStructure(price: number): GeneratedStructure {
@@ -57,6 +58,11 @@ export function runDynamicsFixtures() {
     () => undefined,
     [structure],
   )
+  addBankAssets(
+    (path, content) => files.set(path, content),
+    () => undefined,
+    [structure],
+  )
 
   const pay = files.get(
     'data/builder_tables/function/dynamic/pay_payment_fixture.mcfunction',
@@ -97,6 +103,15 @@ export function runDynamicsFixtures() {
   const rotate = files.get(
     'data/builder_tables_generated/function/controller_block/rotate.mcfunction',
   )
+  const bankOpen = files.get(
+    'data/builder_tables_generated/function/bank/open.mcfunction',
+  )
+  const bankCharge = files.get(
+    'data/builder_tables_generated/function/bank/charge_payment_fixture.mcfunction',
+  )
+  const bankDepositAll = files.get(
+    'data/builder_tables_generated/function/bank/deposit_all.mcfunction',
+  )
   if (
     !pay ||
     !charge ||
@@ -110,9 +125,12 @@ export function runDynamicsFixtures() {
     !checkPlan ||
     !captureOwner ||
     !foundPlace ||
-    !rotate
+    !rotate ||
+    !bankOpen ||
+    !bankCharge ||
+    !bankDepositAll
   ) {
-    throw new Error('Faltan las funciones del cobro compacto.')
+    throw new Error('Faltan las funciones del cobro compacto o del banco.')
   }
 
   const chargeLines = charge.split(/\r?\n/).filter(Boolean)
@@ -120,8 +138,11 @@ export function runDynamicsFixtures() {
     throw new Error('El cobro principal no tiene tamaño constante.')
   }
   assertIncludes(pay, 'scoreboard players set #nine bt_price 9')
+  assertIncludes(pay, 'bt_has_card')
+  assertIncludes(pay, 'bt_bank')
   assertIncludes(charge, 'score @s bt_emeralds >= @s bt_price')
   assertIncludes(charge, 'charge_blocks_payment_fixture')
+  assertIncludes(charge, 'builder_tables_generated:bank/charge_payment_fixture')
   assertIncludes(chargeBlocks, 'scoreboard players add @s bt_blocks_to_pay 8')
   assertIncludes(chargeBlocks, 'function builder_tables_generated:payment/consume_blocks with storage builder_tables_generated:payment runtime')
   assertIncludes(chargeBlocks, 'execute if score @s bt_change matches 1.. run function builder_tables_generated:payment/give_change with storage builder_tables_generated:payment runtime')
@@ -129,6 +150,8 @@ export function runDynamicsFixtures() {
   assertIncludes(giveChange, '$give @s minecraft:emerald $(change)')
   assertIncludes(controllerInit, 'scoreboard objectives add bt_owner0 dummy')
   assertIncludes(controllerInit, 'scoreboard objectives add bt_owner3 dummy')
+  assertIncludes(controllerInit, 'scoreboard objectives add bt_bank dummy')
+  assertIncludes(controllerInit, 'scoreboard objectives add bt_deposit trigger')
   assertIncludes(captureOwner, 'data get entity @s UUID[0]')
   assertIncludes(captureOwner, 'data get entity @s UUID[3]')
   assertIncludes(foundPlace, 'bt_plan_owner_match')
@@ -138,6 +161,8 @@ export function runDynamicsFixtures() {
   assertIncludes(buildDo, 'bt_owned_undo_anchor')
   assertIncludes(buildDo, 'bt_new_undo_anchor')
   assertIncludes(undo, 'bt_undo_owner_match')
+  assertIncludes(undo, 'bt_has_card')
+  assertIncludes(undo, 'bt_bank')
   if (undo.includes('controller_block/clear_preview')) {
     throw new Error('UNDO no debe borrar la preview activa de otro jugador.')
   }

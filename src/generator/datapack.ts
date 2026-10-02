@@ -3,6 +3,7 @@ import { prepareStructures } from './nbt'
 import { addControllerAssets } from './controller'
 import { addDynamicAssets } from './dynamics'
 import { addPreviewFiles } from './preview'
+import { addBankAssets } from './bank'
 import { SURVIVAL_POLICY_METADATA } from './survival-policy'
 import type { StructureAnalysis, WorkerStructureInput } from './types'
 import { getVersionProfile, type MinecraftVersion } from './version-profiles'
@@ -78,6 +79,7 @@ export async function generateArchive(
   addControllerAssets(put, putJson, structures)
   addDynamicAssets(put, structures)
   addPreviewFiles(put, structures)
+  addBankAssets(put, putJson, structures)
 
   const report = [
     'BUILDER TABLES ' + targetVersion + ' - BLOQUE DE PLANIFICACIÓN',

@@ -296,6 +296,20 @@ function addControllerBlock(
     ]),
   )
 
+const BANK_DUMMY_OBJECTIVES = [
+  'bt_bank',
+  'bt_has_card',
+  'bt_temp',
+  'bt_temp_emeralds',
+  'bt_temp_blocks',
+]
+const BANK_TRIGGER_OBJECTIVES = [
+  'bt_deposit',
+  'bt_withdraw',
+  'bt_balance',
+  'bt_bank_menu',
+]
+
   put(
     root + 'init.mcfunction',
     mcfunction(
@@ -312,9 +326,20 @@ function addControllerBlock(
             (objective) => 'scoreboard objectives add ' + objective + ' dummy',
           ),
         )
+        .concat(
+          BANK_TRIGGER_OBJECTIVES.map(
+            (objective) => 'scoreboard objectives add ' + objective + ' trigger',
+          ),
+        )
+        .concat(
+          BANK_DUMMY_OBJECTIVES.map(
+            (objective) => 'scoreboard objectives add ' + objective + ' dummy',
+          ),
+        )
         .concat([
           'advancement revoke @a only builder_tables_generated:placed_controller',
           'advancement revoke @a only builder_tables_generated:used_controller',
+          'advancement revoke @a only builder_tables_generated:used_bank_card',
           'function builder_tables_generated:controller_block/remove_anchor',
         ]),
     ),

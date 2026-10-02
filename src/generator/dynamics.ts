@@ -1,6 +1,7 @@
 import { rotatedFillBounds, splitStructureRegions, type Rotation } from './geometry'
 import type { GeneratedStructure } from './nbt'
 import type { TextFileWriter } from './preview'
+import { BANK_CARD_CUSTOM_DATA, BANK_CARD_ITEM } from './bank'
 
 const CONTROLLER_BLOCK = 'minecraft:note_block'
 const CONFIRM_OBJECTIVES = ['bt_confirm1', 'bt_confirm2']
@@ -246,7 +247,21 @@ function undo(structure: GeneratedStructure) {
       ),
     'execute unless entity ' + matchedUndoAnchors + ' run return 0',
     ...clears,
-    'give @s minecraft:emerald ' +
+    'execute store result score @s bt_has_card run clear @s ' +
+      BANK_CARD_ITEM +
+      '[custom_data~{' +
+      BANK_CARD_CUSTOM_DATA +
+      ':true}] 0',
+    'execute if score @s bt_has_card matches 1.. run scoreboard players add @s bt_bank ' +
+      price,
+    'execute if score @s bt_has_card matches 1.. run tellraw @s ' +
+      chat(
+        '[Banco] Se han devuelto ' +
+          price +
+          ' esmeraldas a tu Tarjeta Bancaria.',
+        'green',
+      ),
+    'execute unless score @s bt_has_card matches 1.. run give @s minecraft:emerald ' +
       price,
     'tellraw @a ' +
       chat(
@@ -277,6 +292,12 @@ function pay(structure: GeneratedStructure) {
     'scoreboard players operation @s bt_remaining = @s bt_emerald_blocks',
     'scoreboard players operation @s bt_remaining *= #nine bt_price',
     'scoreboard players operation @s bt_balance += @s bt_remaining',
+    'execute store result score @s bt_has_card run clear @s ' +
+      BANK_CARD_ITEM +
+      '[custom_data~{' +
+      BANK_CARD_CUSTOM_DATA +
+      ':true}] 0',
+    'execute if score @s bt_has_card matches 1.. run scoreboard players operation @s bt_balance += @s bt_bank',
     'execute at ' +
       OWNED_PLAN_ANCHOR +
       ' unless block ~ ~ ~ ' +
@@ -285,6 +306,17 @@ function pay(structure: GeneratedStructure) {
       chat(
         'El Bloque de Planificación ya no existe. No se cobró nada.',
         'red',
+      ),
+    'execute at ' +
+      OWNED_PLAN_ANCHOR +
+      ' if block ~ ~ ~ ' +
+      CONTROLLER_BLOCK +
+      ' if score @s bt_balance matches ..' +
+      (price - 1) +
+      ' if score @s bt_has_card matches 0 if score @s bt_bank matches 1.. run tellraw @s ' +
+      chat(
+        'No tienes suficientes esmeraldas en inventario. ¡Lleva tu Tarjeta Bancaria contigo para autorizar tu saldo bancario!',
+        'gold',
       ),
     'execute at ' +
       OWNED_PLAN_ANCHOR +
@@ -316,7 +348,8 @@ function charge(structure: GeneratedStructure) {
       'No hay un Bloque de Planificación activo. No se cobró nada.',
       'Este Bloque de Planificación pertenece a otro jugador. No se cobró nada.',
     ),
-    '# Cobro compacto: usa esmeraldas sueltas primero y bloques sólo para el resto.',
+    'execute if score @s bt_has_card matches 1.. if score @s bt_bank matches 1.. run function builder_tables_generated:bank/charge_' +
+      id,
     'execute if score @s bt_emeralds >= @s bt_price run clear @s minecraft:emerald ' +
       price,
     'execute if score @s bt_emeralds >= @s bt_price run function builder_tables:dynamic/build_' +
@@ -544,6 +577,10 @@ function addControllerFunctions(
     'scoreboard players enable @a bt_book',
     'scoreboard players enable @a bt_select',
     'scoreboard players enable @a bt_exit',
+    'scoreboard players enable @a bt_deposit',
+    'scoreboard players enable @a bt_withdraw',
+    'scoreboard players enable @a bt_balance',
+    'scoreboard players enable @a bt_bank_menu',
   ]
   CONFIRM_OBJECTIVES.forEach((objective) => {
     tick.push('scoreboard players enable @a ' + objective)
@@ -577,6 +614,17 @@ function addControllerFunctions(
     'scoreboard players reset @a[scores={bt_exit=1..}] bt_exit',
     'execute as @a[scores={bt_book=1..}] run function builder_tables_generated:controller_block/give_recipe',
     'scoreboard players reset @a[scores={bt_book=1..}] bt_book',
+    'execute as @a[scores={bt_deposit=1}] run function builder_tables_generated:bank/deposit_64_emeralds',
+    'execute as @a[scores={bt_deposit=2}] run function builder_tables_generated:bank/deposit_64_blocks',
+    'execute as @a[scores={bt_deposit=3}] run function builder_tables_generated:bank/deposit_all',
+    'scoreboard players reset @a[scores={bt_deposit=1..}] bt_deposit',
+    'execute as @a[scores={bt_withdraw=1}] run function builder_tables_generated:bank/withdraw_64_emeralds',
+    'execute as @a[scores={bt_withdraw=2}] run function builder_tables_generated:bank/withdraw_64_blocks',
+    'scoreboard players reset @a[scores={bt_withdraw=1..}] bt_withdraw',
+    'execute as @a[scores={bt_balance=1..}] run function builder_tables_generated:bank/balance',
+    'scoreboard players reset @a[scores={bt_balance=1..}] bt_balance',
+    'execute as @a[scores={bt_bank_menu=1..}] run function builder_tables_generated:bank/open',
+    'scoreboard players reset @a[scores={bt_bank_menu=1..}] bt_bank_menu',
     'function builder_tables:dynamic_triggers',
     'function builder_tables:rotar',
     'function builder_tables_generated:preview/tick',
