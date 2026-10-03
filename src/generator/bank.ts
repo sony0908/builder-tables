@@ -210,6 +210,26 @@ function addBankFunctions(
     ]),
   )
 
+  // Intereses bancarios diarios (1% diario, tope 250, notificación por actionbar)
+  put(
+    root + 'apply_interest.mcfunction',
+    mcfunction([
+      'execute as @a run function builder_tables_generated:bank/player_interest',
+    ]),
+  )
+
+  put(
+    root + 'player_interest.mcfunction',
+    mcfunction([
+      'scoreboard players operation @s bt_interest = @s bt_bank',
+      'scoreboard players operation @s bt_interest /= #hundred bt_interest_math',
+      'execute if score @s bt_interest matches 251.. run scoreboard players operation @s bt_interest = #cap bt_interest_math',
+      'execute if score @s bt_interest matches 1.. run scoreboard players operation @s bt_bank += @s bt_interest',
+      'execute if score @s bt_interest matches 1.. run playsound minecraft:block.amethyst_block.chime player @s ~ ~ ~ 0.8 1.2',
+      'execute if score @s bt_interest matches 1.. run title @s actionbar [{"text":"+ ","color":"green","bold":true},{"score":{"name":"@s","objective":"bt_interest"},"color":"green","bold":true},{"text":" esmeraldas en intereses bancarios","color":"gold"}]',
+    ]),
+  )
+
   // Cobro específico por estructura mediante saldo de tarjeta
   structures.forEach((structure) => {
     const { id } = structure.analysis

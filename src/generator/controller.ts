@@ -302,6 +302,9 @@ const BANK_DUMMY_OBJECTIVES = [
   'bt_temp',
   'bt_temp_emeralds',
   'bt_temp_blocks',
+  'bt_bank_timer',
+  'bt_interest',
+  'bt_interest_math',
 ]
 const BANK_TRIGGER_OBJECTIVES = [
   'bt_deposit',
@@ -337,6 +340,8 @@ const BANK_TRIGGER_OBJECTIVES = [
           ),
         )
         .concat([
+          'scoreboard players set #hundred bt_interest_math 100',
+          'scoreboard players set #cap bt_interest_math 250',
           'advancement revoke @a only builder_tables_generated:placed_controller',
           'advancement revoke @a only builder_tables_generated:used_controller',
           'advancement revoke @a only builder_tables_generated:used_bank_card',
