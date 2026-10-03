@@ -237,16 +237,18 @@ function addBankFunctions(
     put(
       root + 'charge_' + id + '.mcfunction',
       mcfunction([
-        '# Si el banco cubre el total de la estructura:',
+        '# Capturar cuánto cubre el banco ANTES de modificarlo',
+        'scoreboard players operation @s bt_temp = @s bt_bank',
+        '# Caso 1: el banco cubre el total',
         'execute if score @s bt_bank >= @s bt_price run scoreboard players operation @s bt_bank -= @s bt_price',
-        'execute if score @s bt_bank >= @s bt_price run tellraw @s [{"text":"[Banco] Pago completado con tu Tarjeta Bancaria. Saldo restante: ","color":"green"},{"score":{"name":"@s","objective":"bt_bank"},"color":"gold"}]',
-        'execute if score @s bt_bank >= @s bt_price run function builder_tables:dynamic/build_' +
+        'execute if score @s bt_temp >= @s bt_price run tellraw @s [{"text":"[Banco] Pago completado con tu Tarjeta Bancaria. Saldo restante: ","color":"green"},{"score":{"name":"@s","objective":"bt_bank"},"color":"gold"}]',
+        'execute if score @s bt_temp >= @s bt_price run function builder_tables:dynamic/build_' +
           id,
-        'execute if score @s bt_bank >= @s bt_price run return 1',
-        '# Si el banco solo cubre una parte, se descuenta y el remanente se cobra del inventario:',
+        'execute if score @s bt_temp >= @s bt_price run return 1',
+        '# Caso 2: el banco cubre solo una parte — descontar del banco y cobrar el resto del inventario',
         'scoreboard players operation @s bt_price -= @s bt_bank',
-        'tellraw @s [{"text":"[Banco] Se aplicaron ","color":"yellow"},{"score":{"name":"@s","objective":"bt_bank"},"color":"gold"},{"text":" esmeraldas de tu Tarjeta Bancaria. El resto se cobrará del inventario.","color":"yellow"}]',
         'scoreboard players set @s bt_bank 0',
+        'tellraw @s [{"text":"[Banco] Se aplicaron ","color":"yellow"},{"score":{"name":"@s","objective":"bt_temp"},"color":"gold"},{"text":" esmeraldas de tu Tarjeta Bancaria. El resto se cobrará del inventario.","color":"yellow"}]',
       ]),
     )
   })
