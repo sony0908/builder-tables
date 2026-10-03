@@ -184,5 +184,89 @@ export function runDynamicsFixtures() {
     throw new Error('El cobro sin cambio no conserva el saldo.')
   }
 
-  return 'Cobro compacto validado para ' + price + ' esmeraldas.'
+  // ── Tests del sistema de intereses bancarios ─────────────────────────────
+
+  // Las funciones de interés deben existir en el archivo generado
+  const applyInterest = files.get('data/builder_tables_generated/function/bank/apply_interest.mcfunction')
+  const playerInterest = files.get('data/builder_tables_generated/function/bank/player_interest.mcfunction')
+  if (!applyInterest) throw new Error('Falta bank/apply_interest.mcfunction')
+  if (!playerInterest) throw new Error('Falta bank/player_interest.mcfunction')
+
+  // apply_interest debe ejecutarse sobre todos los jugadores
+  assertIncludes(applyInterest, 'execute as @a run function builder_tables_generated:bank/player_interest')
+
+  // player_interest: cálculo 1% usando constante #hundred (÷100)
+  assertIncludes(playerInterest, 'bt_interest /= #hundred bt_interest_math')
+  // player_interest: aplica tope de 250 (#cap)
+  assertIncludes(playerInterest, '#cap bt_interest_math')
+  // player_interest: suma intereses al saldo
+  assertIncludes(playerInterest, 'bt_bank += @s bt_interest')
+  // Notificación solo vía actionbar, nunca en el chat (tellraw llenaría el chat)
+  assertIncludes(playerInterest, 'title @s actionbar')
+  if (playerInterest.includes('tellraw')) {
+    throw new Error('player_interest no debe usar tellraw — solo actionbar para no saturar el chat.')
+  }
+
+  // Timer en tick.mcfunction: 24000 ticks = 1 día Minecraft
+  const tick = files.get('data/builder_tables/function/tick.mcfunction')
+  if (!tick) throw new Error('Falta tick.mcfunction')
+  assertIncludes(tick, 'scoreboard players add #timer bt_bank_timer 1')
+  assertIncludes(tick, 'execute if score #timer bt_bank_timer matches 24000.. run function builder_tables_generated:bank/apply_interest')
+  assertIncludes(tick, 'execute if score #timer bt_bank_timer matches 24000.. run scoreboard players set #timer bt_bank_timer 0')
+
+  // Objetivos de intereses registrados en init
+  assertIncludes(controllerInit, 'bt_bank_timer')
+  assertIncludes(controllerInit, 'bt_interest')
+  assertIncludes(controllerInit, '#hundred bt_interest_math')
+  assertIncludes(controllerInit, '#cap bt_interest_math')
+
+  // ── Validación matemática del cálculo de intereses ───────────────────────
+  // Replica la lógica de player_interest.mcfunction en JS
+  // Minecraft usa división entera (trunca hacia cero, como Math.trunc)
+  function calcInterest(balance: number): number {
+    const interest = Math.trunc(balance / 100) // 1% entero
+    const capped = interest > 250 ? 250 : interest // tope de 250
+    return capped >= 1 ? capped : 0 // mínimo 1 para aplicar
+  }
+
+  // Saldo insuficiente → sin interés
+  if (calcInterest(0) !== 0)   throw new Error('Saldo 0 no debe generar interés')
+  if (calcInterest(99) !== 0)  throw new Error('Saldo 99 no debe generar interés (99÷100=0 entero)')
+
+  // Mínimo para generar interés
+  if (calcInterest(100) !== 1) throw new Error('Saldo 100 debe generar exactamente 1 esmeralda de interés')
+
+  // Saldo típico
+  if (calcInterest(1000) !== 10)   throw new Error('Saldo 1000 debe generar 10 esmeraldas')
+  if (calcInterest(5000) !== 50)   throw new Error('Saldo 5000 debe generar 50 esmeraldas')
+
+  // Justo en el tope: 25000 ÷ 100 = 250 (exacto, sin truncar)
+  if (calcInterest(25000) !== 250) throw new Error('Saldo 25000 debe generar exactamente 250 (tope)')
+
+  // Por encima del tope → se limita a 250
+  if (calcInterest(25001) !== 250) throw new Error('Saldo 25001 debe limitarse a 250')
+  if (calcInterest(100000) !== 250) throw new Error('Saldo muy alto debe limitarse a 250 por ciclo')
+
+  // Caso real de la imagen: saldo 54144 → trunc(54144/100)=541 → tope → 250
+  if (calcInterest(54144) !== 250) throw new Error('Saldo 54144 debe estar limitado a 250')
+
+  // ── Corrección de cobro bancario: bt_temp como snapshot ──────────────────
+  // bankCharge debe capturar bt_bank en bt_temp ANTES de modificarlo
+  assertIncludes(bankCharge, 'scoreboard players operation @s bt_temp = @s bt_bank')
+  // Las condiciones de "pago completo" deben usar bt_temp
+  assertIncludes(bankCharge, 'execute if score @s bt_temp >= @s bt_price run')
+  // Ninguna condición post-resta debe comparar bt_bank directamente
+  const bankChargeLines = bankCharge.split(/\r?\n/).filter(Boolean)
+  const badLines = bankChargeLines.filter(
+    (line) =>
+      line.includes('if score @s bt_bank >= @s bt_price') &&
+      !line.includes('@s bt_bank -= @s bt_price'),
+  )
+  if (badLines.length > 0) {
+    throw new Error(
+      'bankCharge usa bt_bank en condiciones post-modificación (debe usar bt_temp): ' + badLines[0],
+    )
+  }
+
+  return 'Cobro compacto e intereses bancarios validados para ' + price + ' esmeraldas.'
 }
