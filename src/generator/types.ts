@@ -63,6 +63,7 @@ export type WorkerStructureInput = {
   bytes: ArrayBuffer
   metadataText?: string
   nameOverride?: string
+  replacements?: Record<string, string>
 }
 
 import type { MinecraftVersion } from './version-profiles'

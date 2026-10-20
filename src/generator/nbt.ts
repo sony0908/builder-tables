@@ -585,7 +585,21 @@ async function processInput(
   const size = sizeValues as StructureSize
   const oldPalette = asList(root.palette, 'La paleta NBT no es válida.')
   const oldBlocks = asList(root.blocks, 'La lista de bloques NBT no es válida.')
-  const states = oldPalette.map(blockState)
+  const rawStates = oldPalette.map(blockState)
+  const replacements = input.replacements
+  const states = rawStates.map((state) => {
+    if (
+      replacements &&
+      replacements[state.name] &&
+      VANILLA_BLOCK_IDS.has(replacements[state.name])
+    ) {
+      return {
+        ...state,
+        name: replacements[state.name],
+      }
+    }
+    return state
+  })
   const palette: NbtRecord[] = []
   const paletteStates: BlockState[] = []
   const mapping = new Map<number, number | null>()
@@ -603,9 +617,15 @@ async function processInput(
       newId = palette.length
       stateIds.set(key, newId)
       paletteStates.push(state)
-      palette.push(
-        asRecord(oldPalette[index], 'La paleta contiene una entrada inválida.'),
+      const rawPaletteEntry = asRecord(
+        oldPalette[index],
+        'La paleta contiene una entrada inválida.',
       )
+      const entryToPush = { ...rawPaletteEntry }
+      if (entryToPush.Name !== state.name) {
+        entryToPush.Name = state.name
+      }
+      palette.push(entryToPush)
     }
     mapping.set(index, newId)
   })

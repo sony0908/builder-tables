@@ -1,6 +1,11 @@
 import { addDynamicAssets } from './dynamics'
 import { addControllerAssets } from './controller'
 import { addBankAssets } from './bank'
+import {
+  normalizeBlockName,
+  isValidVanillaBlock,
+  formatBlockDisplayName,
+} from './block-search'
 import type { GeneratedStructure } from './nbt'
 
 function fixtureStructure(price: number): GeneratedStructure {
@@ -268,5 +273,31 @@ export function runDynamicsFixtures() {
     )
   }
 
-  return 'Cobro compacto e intereses bancarios validados para ' + price + ' esmeraldas.'
+  // ── Sustitución de bloques y búsqueda / normalización ────────────────────
+  if (normalizeBlockName('roble') !== 'minecraft:oak_planks') {
+    throw new Error('normalizeBlockName debe resolver roble -> minecraft:oak_planks')
+  }
+  if (normalizeBlockName('cristal') !== 'minecraft:glass') {
+    throw new Error('normalizeBlockName debe resolver cristal -> minecraft:glass')
+  }
+  if (normalizeBlockName('pino') !== 'minecraft:spruce_planks') {
+    throw new Error('normalizeBlockName debe resolver pino -> minecraft:spruce_planks')
+  }
+  if (normalizeBlockName('stone_bricks') !== 'minecraft:stone_bricks') {
+    throw new Error('normalizeBlockName debe resolver ID sin namespace')
+  }
+  if (normalizeBlockName('bloque_inexistente_123') !== null) {
+    throw new Error('normalizeBlockName debe retornar null para bloques inválidos')
+  }
+  if (!isValidVanillaBlock('minecraft:deepslate_bricks')) {
+    throw new Error('isValidVanillaBlock debe validar deepslate_bricks')
+  }
+  if (isValidVanillaBlock('minecraft:bloque_falso')) {
+    throw new Error('isValidVanillaBlock debe rechazar bloque falso')
+  }
+  if (formatBlockDisplayName('minecraft:oak_planks') !== 'Oak Planks') {
+    throw new Error('formatBlockDisplayName debe formatear a Oak Planks')
+  }
+
+  return 'Cobro compacto, intereses bancarios y sustitución de bloques validados para ' + price + ' esmeraldas.'
 }

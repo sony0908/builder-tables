@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useRef, useState } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import type { ChangeEvent, DragEvent } from 'react'
 import {
   ArrowRight,
@@ -33,6 +33,11 @@ import {
   type MinecraftVersion,
 } from './generator/version-profiles'
 import { PriceCatalog } from './components/PriceCatalog'
+import {
+  BlockReplacementPanel,
+  type BlockReplacementStructure,
+} from './components/BlockReplacementPanel'
+import type { MaterialCount } from './generator/types'
 import './App.css'
 
 type StructurePhase = 'queued' | 'analyzing' | 'ready' | 'rejected'
@@ -44,6 +49,8 @@ type UploadedStructure = {
   metadataFile?: File
   nameOverride?: string
   analysis?: StructureAnalysis
+  originalMaterials?: MaterialCount[]
+  replacements?: Record<string, string>
   phase: StructurePhase
 }
 
@@ -107,6 +114,7 @@ async function buildWorkerInputs(
         ? await structure.metadataFile.text()
         : undefined,
       nameOverride: structure.nameOverride,
+      replacements: structure.replacements,
     })),
   )
 }
@@ -196,6 +204,9 @@ function App() {
             return {
               ...structure,
               analysis,
+              originalMaterials:
+                structure.originalMaterials ??
+                (analysis.status === 'ready' ? analysis.materials : undefined),
               phase: analysis.status === 'ready' ? 'ready' : 'rejected',
             }
           }),
@@ -475,6 +486,43 @@ function App() {
         : hasRemovedBlocks
           ? ' status-warning'
           : ' status-ready'
+
+  const replacementStructures: BlockReplacementStructure[] = useMemo(
+    () =>
+      structures
+        .filter((s) => s.analysis?.status === 'ready')
+        .map((s) => ({
+          id: s.id,
+          name: displayName(s),
+          materials: s.originalMaterials || s.analysis?.materials || [],
+          replacements: s.replacements || {},
+        })),
+    [structures],
+  )
+
+  const updateStructureReplacements = (
+    structureId: string,
+    replacements: Record<string, string>,
+  ) => {
+    setStructures((current) =>
+      current.map((s) =>
+        s.id === structureId ? { ...s, replacements } : s,
+      ),
+    )
+    clearGeneratedDownload()
+    setRevision((c) => c + 1)
+  }
+
+  const applyReplacementsToAll = (replacements: Record<string, string>) => {
+    setStructures((current) =>
+      current.map((s) => ({
+        ...s,
+        replacements: { ...s.replacements, ...replacements },
+      })),
+    )
+    clearGeneratedDownload()
+    setRevision((c) => c + 1)
+  }
 
   const generatePackage = async () => {
     if (!canGenerate || !workerRef.current) return
@@ -877,6 +925,23 @@ function App() {
               </div>
             ) : null}
           </section>
+
+          {hasStructures && replacementStructures.length > 0 && (
+            <BlockReplacementPanel
+              structures={replacementStructures}
+              selectedStructureId={
+                selectedViewerKey &&
+                replacementStructures.some((s) => s.id === selectedViewerKey)
+                  ? selectedViewerKey
+                  : replacementStructures[0]?.id || ''
+              }
+              onSelectStructure={(id) => setSelectedViewerKey(id)}
+              onUpdateReplacements={updateStructureReplacements}
+              onApplyReplacementsToAll={applyReplacementsToAll}
+              assetFile={viewerAssetFile}
+            />
+          )}
+
           <section className="review-card">
             <div className="review-header">
               <div>
@@ -970,6 +1035,27 @@ function App() {
                           {analysis.policy.embeddedItems
                             .map(
                               (item) => item.name + ' × ' + item.count,
+                            )
+                            .join(', ')}
+                        </div>
+                      ) : null}
+                      {structure.replacements &&
+                      Object.keys(structure.replacements).length > 0 ? (
+                        <div
+                          className="removed-blocks-note"
+                          style={{
+                            color: 'var(--primary)',
+                            borderColor:
+                              'color-mix(in srgb, var(--primary) 30%, transparent)',
+                          }}
+                        >
+                          Sustituciones aplicadas:{' '}
+                          {Object.entries(structure.replacements)
+                            .map(
+                              ([from, to]) =>
+                                from.replace(/^minecraft:/, '') +
+                                ' ➔ ' +
+                                to.replace(/^minecraft:/, ''),
                             )
                             .join(', ')}
                         </div>
