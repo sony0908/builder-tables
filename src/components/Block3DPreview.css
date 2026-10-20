@@ -48,6 +48,12 @@
   display: block;
 }
 
+.block-3d-stage.block-3d-stage-compact {
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.12);
+  flex-shrink: 0;
+}
+
 /* Fallback isometric preview when no client.jar is loaded */
 .block-3d-stage[data-state='fallback'] {
   background: radial-gradient(

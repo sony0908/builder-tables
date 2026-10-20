@@ -175,3 +175,75 @@ export function Block3DPreview({
     </div>
   )
 }
+
+/**
+ * Icono 3D ligero exclusivo para tarjetas y listas, sin texto ni contenedores grandes.
+ */
+export function Block3DIcon({
+  blockId,
+  assetFile,
+  size = 56,
+}: {
+  blockId: string
+  assetFile: File | null
+  size?: number
+}) {
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const [texturedKey, setTexturedKey] = useState('')
+  const [failedKey, setFailedKey] = useState('')
+
+  const iconKey =
+    assetFile && blockId
+      ? `${blockId}:${size}:${assetFile.name}:${assetFile.size}`
+      : ''
+
+  const state =
+    !assetFile || !blockId || failedKey === iconKey
+      ? 'fallback'
+      : texturedKey === iconKey
+        ? 'textured'
+        : 'loading'
+
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+
+    const context = canvas.getContext('2d')
+    context?.clearRect(0, 0, canvas.width, canvas.height)
+
+    if (!assetFile || !blockId) return
+
+    let cancelled = false
+
+    void getLargeThumbnail(assetFile, blockId, size)
+      .then((renderedCanvas) => {
+        if (cancelled || !context) return
+        context.clearRect(0, 0, canvas.width, canvas.height)
+        context.drawImage(renderedCanvas, 0, 0, canvas.width, canvas.height)
+        setTexturedKey(iconKey)
+      })
+      .catch(() => {
+        if (!cancelled) setFailedKey(iconKey)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [assetFile, blockId, iconKey, size])
+
+  return (
+    <div
+      className="block-3d-stage block-3d-stage-compact"
+      data-state={state}
+      style={
+        {
+          width: size,
+          height: size,
+          '--block-tint': blockTint(blockId),
+        } as CSSProperties
+      }
+    >
+      <canvas ref={canvasRef} width={size} height={size} />
+    </div>
+  )
+}

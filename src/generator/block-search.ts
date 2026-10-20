@@ -4,7 +4,6 @@ export const VANILLA_BLOCK_SET = new Set<string>(VANILLA_BLOCK_IDS_26_2)
 
 /**
  * Bloques más comunes para sugerencias rápidas y datalist.
- * Basado en las plantillas y bloques usados en generador-de-NBT.
  */
 export const COMMON_BLOCKS: string[] = [
   'minecraft:oak_planks',
@@ -77,10 +76,104 @@ export const COMMON_BLOCKS: string[] = [
 ]
 
 /**
- * Atajos y alias en español para que el usuario pueda escribir términos comunes
- * sin necesidad de recordar el ID técnico exacto en inglés.
+ * Colores en español e inglés mapeados a palabras clave de Minecraft
  */
-const ALIASES: Record<string, string> = {
+const COLOR_KEYWORDS: Record<string, string[]> = {
+  // Blanco / White
+  blanco: ['white', 'quartz', 'snow', 'diorite', 'calcite', 'bone_block', 'iron_block'],
+  white: ['white', 'quartz', 'snow', 'diorite', 'calcite', 'bone_block', 'iron_block'],
+
+  // Negro / Black
+  negro: ['black', 'obsidian', 'netherite', 'blackstone', 'coal_block', 'basalt'],
+  black: ['black', 'obsidian', 'netherite', 'blackstone', 'coal_block', 'basalt'],
+
+  // Gris / Gray / Grey
+  gris: ['gray', 'grey', 'stone', 'andesite', 'cobblestone', 'deepslate', 'gravel', 'tuff'],
+  gray: ['gray', 'grey', 'stone', 'andesite', 'cobblestone', 'deepslate', 'gravel', 'tuff'],
+  grey: ['gray', 'grey', 'stone', 'andesite', 'cobblestone', 'deepslate', 'gravel', 'tuff'],
+
+  // Rojo / Red
+  rojo: ['red', 'crimson', 'nether_brick', 'brick', 'redstone', 'magma'],
+  red: ['red', 'crimson', 'nether_brick', 'brick', 'redstone', 'magma'],
+
+  // Azul / Blue
+  azul: ['blue', 'lapis', 'warped'],
+  blue: ['blue', 'lapis', 'warped'],
+
+  // Celeste / Light Blue / Cyan
+  celeste: ['light_blue', 'cyan', 'prismarine'],
+  'light blue': ['light_blue', 'cyan', 'prismarine'],
+  cian: ['cyan', 'prismarine', 'light_blue', 'warped'],
+  cyan: ['cyan', 'prismarine', 'light_blue', 'warped'],
+
+  // Verde / Green / Lima / Lime
+  verde: ['green', 'lime', 'moss', 'leaves', 'grass', 'emerald', 'melon', 'sculk'],
+  green: ['green', 'lime', 'moss', 'leaves', 'grass', 'emerald', 'melon', 'sculk'],
+  lima: ['lime'],
+  lime: ['lime'],
+
+  // Amarillo / Yellow
+  amarillo: ['yellow', 'gold', 'sponge', 'hay_block', 'bamboo'],
+  yellow: ['yellow', 'gold', 'sponge', 'hay_block', 'bamboo'],
+
+  // Naranja / Orange
+  naranja: ['orange', 'acacia', 'copper', 'pumpkin', 'honey'],
+  orange: ['orange', 'acacia', 'copper', 'pumpkin', 'honey'],
+
+  // Marrón / Brown
+  marron: ['brown', 'oak', 'spruce', 'dark_oak', 'dirt', 'mud', 'mud_bricks', 'wood'],
+  marrón: ['brown', 'oak', 'spruce', 'dark_oak', 'dirt', 'mud', 'mud_bricks', 'wood'],
+  brown: ['brown', 'oak', 'spruce', 'dark_oak', 'dirt', 'mud', 'mud_bricks', 'wood'],
+
+  // Morado / Púrpura / Purple / Magenta / Violeta
+  morado: ['purple', 'magenta', 'purpur', 'amethyst', 'shulker'],
+  purpura: ['purple', 'magenta', 'purpur', 'amethyst', 'shulker'],
+  púrpura: ['purple', 'magenta', 'purpur', 'amethyst', 'shulker'],
+  violeta: ['purple', 'magenta', 'amethyst'],
+  purple: ['purple', 'magenta', 'purpur', 'amethyst', 'shulker'],
+  magenta: ['magenta', 'purple'],
+
+  // Rosa / Pink
+  rosa: ['pink', 'cherry'],
+  pink: ['pink', 'cherry'],
+}
+
+/**
+ * Categorías y familias de materiales
+ */
+const CATEGORY_KEYWORDS: Record<string, string[]> = {
+  madera: ['planks', 'log', 'wood', 'stem', 'hyphae'],
+  wood: ['planks', 'log', 'wood', 'stem', 'hyphae'],
+  tablones: ['planks'],
+  planks: ['planks'],
+  tronco: ['log', 'wood'],
+  log: ['log', 'wood'],
+  piedra: ['stone', 'cobblestone', 'deepslate', 'andesite', 'diorite', 'granite', 'tuff', 'basalt', 'blackstone'],
+  stone: ['stone', 'cobblestone', 'deepslate', 'andesite', 'diorite', 'granite', 'tuff', 'basalt', 'blackstone'],
+  pizarra: ['deepslate'],
+  deepslate: ['deepslate'],
+  vidrio: ['glass'],
+  cristal: ['glass'],
+  glass: ['glass'],
+  ladrillo: ['brick', 'bricks'],
+  ladrillos: ['brick', 'bricks'],
+  bricks: ['brick', 'bricks'],
+  hormigon: ['concrete'],
+  hormigón: ['concrete'],
+  concreto: ['concrete'],
+  concrete: ['concrete'],
+  terracota: ['terracotta'],
+  terracotta: ['terracotta'],
+  lana: ['wool'],
+  wool: ['wool'],
+  luz: ['sea_lantern', 'glowstone', 'shroomlight', 'lantern', 'redstone_lamp', 'froglight', 'ochre_froglight', 'pearlescent_froglight', 'verdant_froglight'],
+  light: ['sea_lantern', 'glowstone', 'shroomlight', 'lantern', 'redstone_lamp', 'froglight'],
+}
+
+/**
+ * Nombres y alias en español para resolución directa
+ */
+const SPANISH_NAMES: Record<string, string> = {
   // Maderas
   roble: 'minecraft:oak_planks',
   madera: 'minecraft:oak_planks',
@@ -125,7 +218,7 @@ const ALIASES: Record<string, string> = {
   vidrio_blanco: 'minecraft:white_stained_glass',
   cristal_tintado: 'minecraft:tinted_glass',
 
-  // Concretos / Hormigones
+  // Concretos
   hormigon: 'minecraft:white_concrete',
   hormigón: 'minecraft:white_concrete',
   concreto: 'minecraft:white_concrete',
@@ -141,7 +234,6 @@ const ALIASES: Record<string, string> = {
 
 /**
  * Normaliza cualquier entrada del usuario a un ID de bloque vanilla válido.
- * Soporta IDs con y sin namespace 'minecraft:', así como alias en español.
  */
 export function normalizeBlockName(raw: string): string | null {
   if (!raw || typeof raw !== 'string') return null
@@ -150,22 +242,19 @@ export function normalizeBlockName(raw: string): string | null {
     return null
   }
 
-  // Verificar alias directos
-  if (ALIASES[name]) return ALIASES[name]
+  if (SPANISH_NAMES[name]) return SPANISH_NAMES[name]
 
-  // Si no tiene namespace, probar con 'minecraft:'
   if (!name.includes(':')) {
     const withNamespace = 'minecraft:' + name
-    if (ALIASES[name]) return ALIASES[name]
+    if (SPANISH_NAMES[name]) return SPANISH_NAMES[name]
     if (VANILLA_BLOCK_SET.has(withNamespace)) return withNamespace
     name = withNamespace
   }
 
   if (VANILLA_BLOCK_SET.has(name)) return name
 
-  // Probar limpiando guiones o espacios
   const clean = name.replace(/^minecraft:/, '').replace(/\s+/g, '_')
-  if (ALIASES[clean]) return ALIASES[clean]
+  if (SPANISH_NAMES[clean]) return SPANISH_NAMES[clean]
   if (VANILLA_BLOCK_SET.has('minecraft:' + clean)) return 'minecraft:' + clean
 
   return null
@@ -176,8 +265,7 @@ export function isValidVanillaBlock(name: string): boolean {
 }
 
 /**
- * Convierte un ID de bloque en un nombre legible para el usuario.
- * Ej: 'minecraft:deepslate_bricks' -> 'Deepslate Bricks'
+ * Formatea un ID a nombre legible (en inglés legible o enriquecido).
  */
 export function formatBlockDisplayName(blockId: string): string {
   const withoutNamespace = blockId.replace(/^minecraft:/, '')
@@ -185,4 +273,86 @@ export function formatBlockDisplayName(blockId: string): string {
     .split('_')
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(' ')
+}
+
+export type BlockSearchResult = {
+  id: string
+  displayName: string
+}
+
+/**
+ * Búsqueda inteligente por nombre en inglés, español, categoría o COLOR.
+ * Permite buscar "rojo", "blue", "madera", "deepslate", "cristal", "white", etc.
+ */
+export function searchBlocks(query: string, limit: number = 30): BlockSearchResult[] {
+  const q = query.trim().toLowerCase()
+  if (!q) {
+    return COMMON_BLOCKS.slice(0, limit).map((id) => ({
+      id,
+      displayName: formatBlockDisplayName(id),
+    }))
+  }
+
+  // 1. Revisar si la consulta coincide con un color
+  const colorMatches = COLOR_KEYWORDS[q]
+  // 2. Revisar si coincide con una categoría de material
+  const categoryMatches = CATEGORY_KEYWORDS[q]
+
+  const results: BlockSearchResult[] = []
+  const seen = new Set<string>()
+
+  // Función auxiliar para agregar si no está duplicado y es vanilla válido
+  const add = (id: string) => {
+    if (!seen.has(id) && VANILLA_BLOCK_SET.has(id)) {
+      seen.add(id)
+      results.push({ id, displayName: formatBlockDisplayName(id) })
+    }
+  }
+
+  // Coincidencia exacta o alias directo
+  const direct = normalizeBlockName(q)
+  if (direct) add(direct)
+
+  // Coincidencias por palabras clave de color
+  if (colorMatches) {
+    for (const kw of colorMatches) {
+      for (const id of COMMON_BLOCKS) {
+        if (id.includes(kw)) add(id)
+      }
+      for (const id of VANILLA_BLOCK_IDS_26_2) {
+        if (id.includes(kw) && results.length < limit * 2) add(id)
+      }
+    }
+  }
+
+  // Coincidencias por categoría
+  if (categoryMatches) {
+    for (const kw of categoryMatches) {
+      for (const id of COMMON_BLOCKS) {
+        if (id.includes(kw)) add(id)
+      }
+      for (const id of VANILLA_BLOCK_IDS_26_2) {
+        if (id.includes(kw) && results.length < limit * 2) add(id)
+      }
+    }
+  }
+
+  // Búsqueda textual en bloques comunes primero
+  for (const id of COMMON_BLOCKS) {
+    const raw = id.replace(/^minecraft:/, '').toLowerCase()
+    if (raw.includes(q) || raw.replace(/_/g, ' ').includes(q)) {
+      add(id)
+    }
+  }
+
+  // Búsqueda textual en todos los bloques vanilla
+  for (const id of VANILLA_BLOCK_IDS_26_2) {
+    if (results.length >= limit) break
+    const raw = id.replace(/^minecraft:/, '').toLowerCase()
+    if (raw.includes(q) || raw.replace(/_/g, ' ').includes(q)) {
+      add(id)
+    }
+  }
+
+  return results.slice(0, limit)
 }

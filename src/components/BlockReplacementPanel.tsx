@@ -16,9 +16,10 @@ import {
   formatBlockDisplayName,
   normalizeBlockName,
   isValidVanillaBlock,
+  searchBlocks,
 } from '../generator/block-search'
 import { VANILLA_BLOCK_IDS_26_2 } from '../generator/vanilla-blocks-26_2'
-import { Block3DPreview } from './Block3DPreview'
+import { Block3DPreview, Block3DIcon } from './Block3DPreview'
 import './BlockReplacementPanel.css'
 
 export type BlockReplacementStructure = {
@@ -104,6 +105,24 @@ function getSmartFamilySuggestions(sourceBlock: string): string[] {
   return COMMON_BLOCKS.slice(0, 8).filter((id) => id !== sourceBlock)
 }
 
+const COLOR_AND_CATEGORY_FILTERS = [
+  { label: 'Todos', query: '' },
+  { label: 'Madera', query: 'madera' },
+  { label: 'Piedra', query: 'piedra' },
+  { label: 'Cristal', query: 'cristal' },
+  { label: 'Hormigón', query: 'hormigon' },
+  { label: 'Luz', query: 'luz' },
+  { label: 'Blanco', query: 'blanco' },
+  { label: 'Gris', query: 'gris' },
+  { label: 'Negro', query: 'negro' },
+  { label: 'Rojo', query: 'rojo' },
+  { label: 'Azul', query: 'azul' },
+  { label: 'Verde', query: 'verde' },
+  { label: 'Amarillo', query: 'amarillo' },
+  { label: 'Naranja', query: 'naranja' },
+  { label: 'Morado', query: 'morado' },
+]
+
 export function BlockReplacementPanel({
   structures,
   selectedStructureId,
@@ -115,6 +134,7 @@ export function BlockReplacementPanel({
   const [filterQuery, setFilterQuery] = useState('')
   const [activeModalBlock, setActiveModalBlock] = useState<MaterialCount | null>(null)
   const [modalSearchTerm, setModalSearchTerm] = useState('')
+  const [activeFilterChip, setActiveFilterChip] = useState('')
   const [pendingTargetBlock, setPendingTargetBlock] = useState<string | null>(null)
 
   const datalistId = useId()
@@ -146,33 +166,47 @@ export function BlockReplacementPanel({
     })
   }, [currentStructure, filterQuery, activeReplacements])
 
+  // Resultados de búsqueda en el modal (inteligente: español, inglés, color, categoría)
+  const modalSearchResults = useMemo(() => {
+    return searchBlocks(modalSearchTerm, 24)
+  }, [modalSearchTerm])
+
   // Abre el modal para configurar el bloque seleccionado
   const handleOpenModal = (material: MaterialCount) => {
     setActiveModalBlock(material)
     const existingReplacement = activeReplacements[material.name] ?? null
     setPendingTargetBlock(existingReplacement)
-    setModalSearchTerm(existingReplacement ? formatBlockDisplayName(existingReplacement) : '')
+    setModalSearchTerm('')
+    setActiveFilterChip('')
   }
 
   const handleCloseModal = () => {
     setActiveModalBlock(null)
     setPendingTargetBlock(null)
     setModalSearchTerm('')
+    setActiveFilterChip('')
   }
 
   const handleModalSearchChange = (value: string) => {
     setModalSearchTerm(value)
+    setActiveFilterChip('')
     const normalized = normalizeBlockName(value)
     if (normalized && isValidVanillaBlock(normalized)) {
       setPendingTargetBlock(normalized)
-    } else if (!value.trim()) {
-      setPendingTargetBlock(null)
     }
   }
 
-  const handleSelectQuickSuggestion = (targetId: string) => {
+  const handleSelectFilterChip = (query: string) => {
+    setActiveFilterChip(query)
+    setModalSearchTerm(query)
+    const direct = normalizeBlockName(query)
+    if (direct && isValidVanillaBlock(direct)) {
+      setPendingTargetBlock(direct)
+    }
+  }
+
+  const handleSelectTargetBlock = (targetId: string) => {
     setPendingTargetBlock(targetId)
-    setModalSearchTerm(formatBlockDisplayName(targetId))
   }
 
   const handleSaveModalReplacement = () => {
@@ -299,7 +333,7 @@ export function BlockReplacementPanel({
         </div>
       </div>
 
-      {/* Lista visual con iconos grandes */}
+      {/* Lista visual con iconos limpios y ordenados */}
       <div className="block-grid">
         {filteredMaterials.map((material) => {
           const replacement = activeReplacements[material.name]
@@ -323,10 +357,10 @@ export function BlockReplacementPanel({
               <span className="block-card-badge">×{material.count}</span>
 
               <div className="block-card-icon-wrap">
-                <Block3DPreview
+                <Block3DIcon
                   blockId={displayId}
                   assetFile={assetFile}
-                  size={72}
+                  size={56}
                 />
               </div>
 
@@ -418,11 +452,17 @@ export function BlockReplacementPanel({
                 </div>
               </div>
 
-              {/* Selector y buscador del nuevo bloque */}
+              {/* Selector y buscador inteligente del nuevo bloque */}
               <div className="target-picker-section">
-                <label className="target-picker-label">
-                  Buscar o seleccionar el nuevo bloque:
-                </label>
+                <div className="target-picker-header">
+                  <label className="target-picker-label">
+                    Buscar o seleccionar el nuevo bloque:
+                  </label>
+                  <span className="target-picker-hint">
+                    Busca en español, inglés o por color (ej: "rojo", "blue", "madera", "cristal")
+                  </span>
+                </div>
+
                 <div className="target-picker-input-wrap">
                   <Search
                     size={16}
@@ -437,7 +477,7 @@ export function BlockReplacementPanel({
                     className="target-picker-input"
                     type="text"
                     list={datalistId}
-                    placeholder="Escribe el nombre (ej: pino, cristal, deepslate...)"
+                    placeholder="Escribe el nombre o color (ej: roble, rojo, azul, pizarra, cristal...)"
                     value={modalSearchTerm}
                     onChange={(e) => handleModalSearchChange(e.target.value)}
                     autoFocus
@@ -449,7 +489,7 @@ export function BlockReplacementPanel({
                       type="button"
                       onClick={() => {
                         setModalSearchTerm('')
-                        setPendingTargetBlock(null)
+                        setActiveFilterChip('')
                       }}
                       title="Limpiar búsqueda"
                     >
@@ -458,22 +498,70 @@ export function BlockReplacementPanel({
                   )}
                 </div>
 
-                {/* Sugerencias contextuales rápidas */}
+                {/* Filtros rápidos por color y categoría */}
+                <div className="target-filter-chips">
+                  <span className="quick-suggestions-label">Filtros rápidos:</span>
+                  {COLOR_AND_CATEGORY_FILTERS.map((chip) => {
+                    const isActive = activeFilterChip === chip.query
+                    return (
+                      <button
+                        key={chip.label}
+                        type="button"
+                        className={`target-filter-chip ${isActive ? 'is-active' : ''}`}
+                        onClick={() => handleSelectFilterChip(chip.query)}
+                      >
+                        {chip.label}
+                      </button>
+                    )
+                  })}
+                </div>
+
+                {/* Sugerencias contextuales según el bloque original */}
                 {smartSuggestions.length > 0 && (
                   <div className="quick-suggestions">
-                    <span className="quick-suggestions-label">Sugerencias:</span>
+                    <span className="quick-suggestions-label">Familia directa:</span>
                     {smartSuggestions.map((id) => (
                       <button
                         key={id}
                         type="button"
                         className={`quick-pill ${pendingTargetBlock === id ? 'is-active' : ''}`}
-                        onClick={() => handleSelectQuickSuggestion(id)}
+                        onClick={() => handleSelectTargetBlock(id)}
                       >
                         {formatBlockDisplayName(id)}
                       </button>
                     ))}
                   </div>
                 )}
+
+                {/* Resultados visuales en cuadrícula interactiva con iconos 3D */}
+                <div className="target-picker-results">
+                  {modalSearchResults.map((result) => {
+                    const isSelected = pendingTargetBlock === result.id
+                    return (
+                      <button
+                        key={result.id}
+                        type="button"
+                        className={`target-result-item ${isSelected ? 'is-selected' : ''}`}
+                        onClick={() => handleSelectTargetBlock(result.id)}
+                        title={result.id}
+                      >
+                        <Block3DIcon
+                          blockId={result.id}
+                          assetFile={assetFile}
+                          size={36}
+                        />
+                        <div className="target-result-text">
+                          <span className="target-result-name">
+                            {result.displayName}
+                          </span>
+                          <span className="target-result-id">
+                            {result.id.replace(/^minecraft:/, '')}
+                          </span>
+                        </div>
+                      </button>
+                    )
+                  })}
+                </div>
               </div>
             </div>
 
