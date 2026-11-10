@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { getMinecraftRenderer, getPreparedAssets } from './minecraft-renderer'
 import { formatBlockDisplayName } from '../generator/block-search'
+import type { MinecraftVersion } from '../generator/version-profiles'
 import './Block3DPreview.css'
 
 type Block3DPreviewProps = {
@@ -9,6 +10,7 @@ type Block3DPreviewProps = {
   size?: number
   count?: number
   subtitle?: string
+  version?: MinecraftVersion
 }
 
 const renderQueue: Promise<void> = Promise.resolve()
@@ -24,6 +26,17 @@ function enqueueRender<T>(task: () => Promise<T>) {
   return result
 }
 
+function detectOrGetVersion(assetFile: File, version?: MinecraftVersion): MinecraftVersion {
+  if (version) return version
+  const name = assetFile.name.toLowerCase()
+  if (name.includes('1.21.4')) return '1.21.4'
+  if (name.includes('1.21.2') || name.includes('1.21.3')) return '1.21.2'
+  if (name.includes('1.21')) return '1.21'
+  if (name.includes('26.1')) return '26.1'
+  if (name.includes('26.3')) return '26.3'
+  return '26.2'
+}
+
 function blockTint(blockId: string) {
   let value = 0
   for (const character of blockId) {
@@ -32,25 +45,31 @@ function blockTint(blockId: string) {
   return `hsl(${Math.abs(value) % 360} 32% 52%)`
 }
 
-function getLargeThumbnail(assetFile: File, blockId: string, size: number) {
+function getLargeThumbnail(
+  assetFile: File,
+  blockId: string,
+  size: number,
+  version: MinecraftVersion = '26.2',
+) {
   let byBlock = thumbnailCache.get(assetFile)
   if (!byBlock) {
     byBlock = new Map()
     thumbnailCache.set(assetFile, byBlock)
   }
 
-  const cacheKey = `${blockId}:${size}`
+  const effectiveVersion = detectOrGetVersion(assetFile, version)
+  const cacheKey = `${blockId}:${size}:${effectiveVersion}`
   let thumbnail = byBlock.get(cacheKey)
   if (!thumbnail) {
     thumbnail = enqueueRender(async () => {
       const renderer = await getMinecraftRenderer()
-      const assets = await getPreparedAssets(renderer, assetFile, '26.2')
+      const assets = await getPreparedAssets(renderer, assetFile, effectiveVersion)
       return renderer.renderBlock({
         id: blockId,
         assets,
         width: size,
         height: size,
-        version: '26.2',
+        version: effectiveVersion,
         defaults: 'game',
       })
     })
@@ -67,6 +86,7 @@ export function Block3DPreview({
   size = 160,
   count,
   subtitle,
+  version = '26.2',
 }: Block3DPreviewProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [texturedKey, setTexturedKey] = useState('')
@@ -75,7 +95,7 @@ export function Block3DPreview({
   const isHologram = !blockId
   const iconKey =
     assetFile && blockId
-      ? `${blockId}:${size}:${assetFile.name}:${assetFile.size}`
+      ? `${blockId}:${size}:${assetFile.name}:${assetFile.size}:${version}`
       : ''
 
   const state =
@@ -96,7 +116,7 @@ export function Block3DPreview({
 
     let cancelled = false
 
-    void getLargeThumbnail(assetFile, blockId, size)
+    void getLargeThumbnail(assetFile, blockId, size, version)
       .then((renderedCanvas) => {
         if (cancelled || !context) return
         context.clearRect(0, 0, canvas.width, canvas.height)
@@ -110,7 +130,7 @@ export function Block3DPreview({
     return () => {
       cancelled = true
     }
-  }, [assetFile, blockId, iconKey, size])
+  }, [assetFile, blockId, iconKey, size, version])
 
   if (isHologram) {
     return (
@@ -183,10 +203,12 @@ export function Block3DIcon({
   blockId,
   assetFile,
   size = 56,
+  version = '26.2',
 }: {
   blockId: string
   assetFile: File | null
   size?: number
+  version?: MinecraftVersion
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [texturedKey, setTexturedKey] = useState('')
@@ -194,7 +216,7 @@ export function Block3DIcon({
 
   const iconKey =
     assetFile && blockId
-      ? `${blockId}:${size}:${assetFile.name}:${assetFile.size}`
+      ? `${blockId}:${size}:${assetFile.name}:${assetFile.size}:${version}`
       : ''
 
   const state =
@@ -215,7 +237,7 @@ export function Block3DIcon({
 
     let cancelled = false
 
-    void getLargeThumbnail(assetFile, blockId, size)
+    void getLargeThumbnail(assetFile, blockId, size, version)
       .then((renderedCanvas) => {
         if (cancelled || !context) return
         context.clearRect(0, 0, canvas.width, canvas.height)
@@ -229,7 +251,7 @@ export function Block3DIcon({
     return () => {
       cancelled = true
     }
-  }, [assetFile, blockId, iconKey, size])
+  }, [assetFile, blockId, iconKey, size, version])
 
   return (
     <div

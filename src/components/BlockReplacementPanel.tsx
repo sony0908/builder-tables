@@ -19,6 +19,7 @@ import {
   searchBlocks,
 } from '../generator/block-search'
 import { VANILLA_BLOCK_IDS_26_2 } from '../generator/vanilla-blocks-26_2'
+import type { MinecraftVersion } from '../generator/version-profiles'
 import { Block3DPreview, Block3DIcon } from './Block3DPreview'
 import './BlockReplacementPanel.css'
 
@@ -39,6 +40,7 @@ type BlockReplacementPanelProps = {
   ) => void
   onApplyReplacementsToAll: (replacements: Record<string, string>) => void
   assetFile: File | null
+  targetVersion?: MinecraftVersion
 }
 
 /**
@@ -130,6 +132,7 @@ export function BlockReplacementPanel({
   onUpdateReplacements,
   onApplyReplacementsToAll,
   assetFile,
+  targetVersion = '26.2',
 }: BlockReplacementPanelProps) {
   const [filterQuery, setFilterQuery] = useState('')
   const [activeModalBlock, setActiveModalBlock] = useState<MaterialCount | null>(null)
@@ -366,6 +369,7 @@ export function BlockReplacementPanel({
                   blockId={displayId}
                   assetFile={assetFile}
                   size={56}
+                  version={targetVersion}
                 />
               </div>
 
@@ -434,6 +438,7 @@ export function BlockReplacementPanel({
                     assetFile={assetFile}
                     size={160}
                     count={activeModalBlock.count}
+                    version={targetVersion}
                     subtitle={
                       !isValidVanillaBlock(activeModalBlock.name)
                         ? 'Bloque de mod (se omitirá si no se cambia)'
@@ -456,6 +461,7 @@ export function BlockReplacementPanel({
                     blockId={pendingTargetBlock}
                     assetFile={assetFile}
                     size={160}
+                    version={targetVersion}
                     subtitle={
                       pendingTargetBlock
                         ? 'Sustituirá a todos los originales'
@@ -562,6 +568,7 @@ export function BlockReplacementPanel({
                           blockId={result.id}
                           assetFile={assetFile}
                           size={36}
+                          version={targetVersion}
                         />
                         <div className="target-result-text">
                           <span className="target-result-name">

@@ -809,7 +809,7 @@ function App() {
                     <small>
                       {viewerAssetFile
                         ? formatBytes(viewerAssetFile.size) + ' · solo en este navegador'
-                        : 'Selecciona client.jar ' + targetVersion + ' para usar modelos y texturas'}
+                        : 'Selecciona client.jar (' + targetVersion + ' o 1.21.x) para usar modelos y texturas'}
                     </small>
                   </div>
                   <div className="viewer-assets-actions">
@@ -941,6 +941,7 @@ function App() {
               onUpdateReplacements={updateStructureReplacements}
               onApplyReplacementsToAll={applyReplacementsToAll}
               assetFile={viewerAssetFile}
+              targetVersion={targetVersion}
             />
           )}
 

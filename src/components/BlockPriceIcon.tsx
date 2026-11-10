@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
 import type { CSSProperties } from 'react'
 import { getMinecraftRenderer, getPreparedAssets } from './minecraft-renderer'
+import type { MinecraftVersion } from '../generator/version-profiles'
 import './BlockPriceIcon.css'
 
 type BlockPriceIconProps = {
   blockId: string
   assetFile: File | null
+  version?: MinecraftVersion
 }
 
 const thumbnailCache = new WeakMap<File, Map<string, Promise<HTMLCanvasElement>>>()
@@ -19,6 +21,17 @@ function blockTint(blockId: string) {
   return `hsl(${Math.abs(value) % 360} 30% 53%)`
 }
 
+function detectOrGetVersion(assetFile: File, version?: MinecraftVersion): MinecraftVersion {
+  if (version) return version
+  const name = assetFile.name.toLowerCase()
+  if (name.includes('1.21.4')) return '1.21.4'
+  if (name.includes('1.21.2') || name.includes('1.21.3')) return '1.21.2'
+  if (name.includes('1.21')) return '1.21'
+  if (name.includes('26.1')) return '26.1'
+  if (name.includes('26.3')) return '26.3'
+  return '26.2'
+}
+
 function enqueueRender<T>(task: () => Promise<T>) {
   const result = renderQueue.then(task, task)
   renderQueue = result.then(
@@ -28,35 +41,45 @@ function enqueueRender<T>(task: () => Promise<T>) {
   return result
 }
 
-function getThumbnail(assetFile: File, blockId: string) {
+function getThumbnail(
+  assetFile: File,
+  blockId: string,
+  version: MinecraftVersion = '26.2',
+) {
   let byBlock = thumbnailCache.get(assetFile)
   if (!byBlock) {
     byBlock = new Map()
     thumbnailCache.set(assetFile, byBlock)
   }
 
-  let thumbnail = byBlock.get(blockId)
+  const effectiveVersion = detectOrGetVersion(assetFile, version)
+  const cacheKey = `${blockId}:${effectiveVersion}`
+  let thumbnail = byBlock.get(cacheKey)
   if (!thumbnail) {
     thumbnail = enqueueRender(async () => {
       const renderer = await getMinecraftRenderer()
-      const assets = await getPreparedAssets(renderer, assetFile, '26.2')
+      const assets = await getPreparedAssets(renderer, assetFile, effectiveVersion)
       return renderer.renderBlock({
         id: blockId,
         assets,
         width: 56,
         height: 56,
-        version: '26.2',
+        version: effectiveVersion,
         defaults: 'game',
       })
     })
-    byBlock.set(blockId, thumbnail)
-    void thumbnail.catch(() => byBlock?.delete(blockId))
+    byBlock.set(cacheKey, thumbnail)
+    void thumbnail.catch(() => byBlock?.delete(cacheKey))
   }
 
   return thumbnail
 }
 
-export function BlockPriceIcon({ blockId, assetFile }: BlockPriceIconProps) {
+export function BlockPriceIcon({
+  blockId,
+  assetFile,
+  version = '26.2',
+}: BlockPriceIconProps) {
   const rootRef = useRef<HTMLSpanElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [visible, setVisible] = useState(
@@ -101,7 +124,7 @@ export function BlockPriceIcon({ blockId, assetFile }: BlockPriceIconProps) {
 
     let cancelled = false
 
-    void getThumbnail(assetFile, blockId)
+    void getThumbnail(assetFile, blockId, version)
       .then((thumbnail) => {
         if (cancelled || !context) return
         context.clearRect(0, 0, canvas.width, canvas.height)
@@ -115,7 +138,7 @@ export function BlockPriceIcon({ blockId, assetFile }: BlockPriceIconProps) {
     return () => {
       cancelled = true
     }
-  }, [assetFile, blockId, iconKey, visible])
+  }, [assetFile, blockId, iconKey, visible, version])
 
   return (
     <span

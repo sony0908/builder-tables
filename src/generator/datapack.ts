@@ -36,13 +36,19 @@ export async function generateArchive(
     put(path, json(value))
   }
 
+  const packObject: Record<string, unknown> = {
+    pack_format: profile.packFormatNumber ?? profile.packFormat[0],
+    description:
+      'Builder Tables - Bloque de Planificación para ' + profile.label,
+  }
+  if (profile.supportedFormats) {
+    packObject.supported_formats = profile.supportedFormats
+  }
+  packObject.min_format = profile.packFormat
+  packObject.max_format = profile.packFormat
+
   putJson('pack.mcmeta', {
-    pack: {
-      min_format: profile.packFormat,
-      max_format: profile.packFormat,
-      description:
-        'Builder Tables - Bloque de Planificación para ' + profile.label,
-    },
+    pack: packObject,
   })
   putJson('data/minecraft/tags/function/load.json', {
     values: [
