@@ -1157,6 +1157,36 @@ function App() {
 
       <PriceCatalog assetFile={viewerAssetFile} />
 
+      <section className="installation-guide surveyor-guide" style={{ marginTop: '24px' }}>
+        <div>
+          <span className="eyebrow" style={{ color: '#d97706' }}>Survival Structure Block</span>
+          <h2>Bloque de Topografía y Demolición</h2>
+          <p style={{ margin: '4px 0 0', fontSize: '0.8rem', color: 'var(--muted)' }}>
+            Herramienta survival in-game para escanear a .NBT y allanar terrenos con ganancia.
+          </p>
+        </div>
+        <ol>
+          <li>
+            <span>1</span>
+            <p>
+              Usa la <strong>Cinta de Topógrafo</strong> para marcar dos esquinas en el mundo (sin límite de tamaño).
+            </p>
+          </li>
+          <li>
+            <span>2</span>
+            <p>
+              <strong>Copiar a .NBT:</strong> Guarda tu plano directamente en tu mundo para subirlo a la web de Builder Tables.
+            </p>
+          </li>
+          <li>
+            <span>3</span>
+            <p>
+              <strong>Demoler y Vender (75%):</strong> Allana colinas o construcciones y cobra el 75% del valor en esmeraldas.
+            </p>
+          </li>
+        </ol>
+      </section>
+
       <section id="guide" className="installation-guide">
         <div>
           <span className="eyebrow">Instalación</span>

@@ -4,6 +4,7 @@ import { addControllerAssets } from './controller'
 import { addDynamicAssets } from './dynamics'
 import { addPreviewFiles } from './preview'
 import { addBankAssets } from './bank'
+import { addSurveyorAssets } from './surveyor'
 import { SURVIVAL_POLICY_METADATA } from './survival-policy'
 import type { StructureAnalysis, WorkerStructureInput } from './types'
 import { getVersionProfile, type MinecraftVersion } from './version-profiles'
@@ -52,8 +53,16 @@ export async function generateArchive(
   })
   putJson('data/minecraft/tags/function/load.json', {
     values: [
+      'builder_tables:init',
       'builder_tables_generated:init',
       'builder_tables_generated:controller_block/init',
+      'builder_tables_generated:surveyor/init',
+    ],
+  })
+  putJson('data/minecraft/tags/function/tick.json', {
+    values: [
+      'builder_tables:tick',
+      'builder_tables_generated:surveyor/tick',
     ],
   })
 
@@ -86,6 +95,7 @@ export async function generateArchive(
   addDynamicAssets(put, structures)
   addPreviewFiles(put, structures)
   addBankAssets(put, putJson, structures)
+  addSurveyorAssets(put, putJson)
 
   const report = [
     'BUILDER TABLES ' + targetVersion + ' - BLOQUE DE PLANIFICACIÓN',

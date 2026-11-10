@@ -292,3 +292,12 @@ export function formatBlockPrice(points: number) {
     maximumFractionDigits: 1,
   })
 }
+
+/**
+ * Calcula la ganancia por demolición y liquidación de materiales de un plano o terreno
+ * fijada exactamente al 75% (3/4) del precio de compra.
+ */
+export function calculateDemolitionPrice(buyPrice: number): number {
+  return Math.floor(buyPrice * 0.75)
+}
+
