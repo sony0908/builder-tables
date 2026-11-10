@@ -343,6 +343,7 @@ const BANK_TRIGGER_OBJECTIVES = [
           'scoreboard players set #hundred bt_interest_math 100',
           'scoreboard players set #cap bt_interest_math 250',
           'advancement revoke @a only builder_tables_generated:placed_controller',
+          'advancement revoke @a only builder_tables_generated:placed_surveyor',
           'advancement revoke @a only builder_tables_generated:used_controller',
           'advancement revoke @a only builder_tables_generated:used_bank_card',
           'function builder_tables_generated:controller_block/remove_anchor',
@@ -424,6 +425,11 @@ const BANK_TRIGGER_OBJECTIVES = [
     root + 'found_place.mcfunction',
     mcfunction([
       'tag @s add bt_ctrl_ray_hit',
+      '# Si es Bloque de Topografía, derivar a su inicialización',
+      'execute if items entity @s weapon.mainhand minecraft:note_block[custom_data~{builder_tables_surveyor:1b}] run function builder_tables_generated:surveyor/placed',
+      'execute if items entity @s weapon.mainhand minecraft:note_block[custom_data~{builder_tables_surveyor:1b}] run return 1',
+      'execute if items entity @s weapon.offhand minecraft:note_block[custom_data~{builder_tables_surveyor:1b}] run function builder_tables_generated:surveyor/placed',
+      'execute if items entity @s weapon.offhand minecraft:note_block[custom_data~{builder_tables_surveyor:1b}] run return 1',
       'function builder_tables_generated:controller_block/owner/check_plan',
       'execute if entity ' +
         foreignAnchor +
@@ -447,6 +453,10 @@ const BANK_TRIGGER_OBJECTIVES = [
     root + 'found_use.mcfunction',
     mcfunction([
       'tag @s add bt_ctrl_ray_hit',
+      '# Si es Bloque de Topografía, abrir su menú interactivo',
+      'execute if entity @e[type=minecraft:marker,tag=bt_surveyor_anchor,distance=..0.1,limit=1] run setblock ~ ~ ~ minecraft:note_block[note=0]',
+      'execute if entity @e[type=minecraft:marker,tag=bt_surveyor_anchor,distance=..0.1,limit=1] run function builder_tables_generated:surveyor/open',
+      'execute if entity @e[type=minecraft:marker,tag=bt_surveyor_anchor,distance=..0.1,limit=1] run return 1',
       'function builder_tables_generated:controller_block/owner/check_plan',
       'execute if entity @e[type=minecraft:marker,tag=bt_plan_anchor,tag=!' +
         PLAN_OWNER_MATCH_TAG +
@@ -506,7 +516,7 @@ export function addControllerAssets(
   putJson('data/builder_tables/recipe/planning_block.json', {
     type: 'minecraft:crafting_shapeless',
     category: 'equipment',
-    ingredients: [CONTROLLER_BLOCK, 'minecraft:paper'],
+    ingredients: [{ item: CONTROLLER_BLOCK }, { item: 'minecraft:paper' }],
     result: {
       id: CONTROLLER_BLOCK,
       count: 1,

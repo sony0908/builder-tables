@@ -264,10 +264,10 @@ export function addBankAssets(
     type: 'minecraft:crafting_shapeless',
     category: 'equipment',
     ingredients: [
-      'minecraft:paper',
-      'minecraft:emerald',
-      'minecraft:iron_ingot',
-      'minecraft:redstone',
+      { item: 'minecraft:paper' },
+      { item: 'minecraft:emerald' },
+      { item: 'minecraft:iron_ingot' },
+      { item: 'minecraft:redstone' },
     ],
     result: {
       id: BANK_CARD_ITEM,

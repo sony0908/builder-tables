@@ -1,8 +1,8 @@
 import type { JsonFileWriter } from './controller'
 import type { TextFileWriter } from './preview'
 
-export const SURVEYOR_BLOCK = 'minecraft:crafter'
-export const SURVEYOR_TOOL_ITEM = 'minecraft:compass'
+export const SURVEYOR_BLOCK = 'minecraft:note_block'
+export const SURVEYOR_TOOL_ITEM = 'minecraft:carrot_on_a_stick'
 
 function mcfunction(lines: string[]) {
   return lines.join('\n') + '\n'
@@ -25,17 +25,12 @@ export function surveyorBlockComponents() {
         italic: false,
       },
       {
-        text: 'Marca esquinas con la Cinta de Topógrafo',
+        text: 'Colócalo y haz clic para abrir el centro de control',
         color: 'gray',
         italic: false,
       },
       {
-        text: 'Copia a .NBT o demuele y vende terreno',
-        color: 'dark_gray',
-        italic: false,
-      },
-      {
-        text: 'Venta de materiales al 75% del valor',
+        text: 'Copia a .NBT o demuele y vende terreno al 75%',
         color: 'green',
         italic: false,
       },
@@ -46,6 +41,7 @@ export function surveyorBlockComponents() {
 export function surveyorToolComponents() {
   return {
     'minecraft:max_stack_size': 1,
+    'minecraft:item_model': 'minecraft:compass',
     'minecraft:custom_data': { builder_tables_surveyor_tape: true },
     'minecraft:item_name': {
       text: 'Cinta de Topógrafo',
@@ -70,34 +66,26 @@ export function surveyorToolComponents() {
         italic: false,
       },
     ],
-    'minecraft:consumable': {
-      consume_seconds: 1000,
-      animation: 'none',
-      has_consume_particles: false,
-      sound: 'minecraft:ui.button.click',
-    },
   }
 }
 
 export function surveyorBlockItemSnbt() {
   return (
-    'minecraft:crafter[max_stack_size=1,custom_data={builder_tables_surveyor:1b},' +
+    'minecraft:note_block[max_stack_size=1,custom_data={builder_tables_surveyor:1b},' +
     'item_name={text:"Bloque de Topografía y Demolición",color:"gold",bold:true,italic:false},' +
     'lore=[{text:"Structure Block para Supervivencia",color:"yellow",italic:false},' +
-    '{text:"Marca esquinas con la Cinta de Topógrafo",color:"gray",italic:false},' +
-    '{text:"Copia a .NBT o demuele y vende terreno",color:"dark_gray",italic:false},' +
-    '{text:"Venta de materiales al 75% del valor",color:"green",italic:false}]]'
+    '{text:"Colócalo y haz clic para abrir el centro de control",color:"gray",italic:false},' +
+    '{text:"Copia a .NBT o demuele y vende terreno al 75%",color:"green",italic:false}]]'
   )
 }
 
 export function surveyorToolItemSnbt() {
   return (
-    'minecraft:compass[max_stack_size=1,custom_data={builder_tables_surveyor_tape:1b},' +
+    'minecraft:carrot_on_a_stick[max_stack_size=1,item_model="minecraft:compass",custom_data={builder_tables_surveyor_tape:1b},' +
     'item_name={text:"Cinta de Topógrafo",color:"aqua",bold:true,italic:false},' +
     'lore=[{text:"Herramienta de medición de obras",color:"dark_aqua",italic:false},' +
     '{text:"Clic derecho: Marca Esquina 1 y Esquina 2",color:"gray",italic:false},' +
-    '{text:"Sin límite de tamaño para proyectos gigantes",color:"gold",italic:false}],' +
-    'consumable={consume_seconds:1000.0f,animation:"none",has_consume_particles:false,sound:"minecraft:ui.button.click"}]'
+    '{text:"Sin límite de tamaño para proyectos gigantes",color:"gold",italic:false}]]'
   )
 }
 
@@ -174,14 +162,14 @@ export function addSurveyorAssets(
 ) {
   const root = 'data/builder_tables_generated/function/surveyor/'
 
-  // Recetas survival
+  // Recetas survival con sintaxis estándar de ingredientes
   putJson('data/builder_tables/recipe/surveyor_block.json', {
     type: 'minecraft:crafting_shaped',
     category: 'equipment',
-    pattern: [' I ', 'ICI', ' I '],
+    pattern: [' I ', 'INI', ' I '],
     key: {
-      I: 'minecraft:iron_ingot',
-      C: 'minecraft:cartography_table',
+      I: { item: 'minecraft:iron_ingot' },
+      N: { item: 'minecraft:note_block' },
     },
     result: {
       id: SURVEYOR_BLOCK,
@@ -193,11 +181,35 @@ export function addSurveyorAssets(
   putJson('data/builder_tables/recipe/surveyor_tape.json', {
     type: 'minecraft:crafting_shapeless',
     category: 'equipment',
-    ingredients: ['minecraft:compass', 'minecraft:string', 'minecraft:paper'],
+    ingredients: [
+      { item: 'minecraft:compass' },
+      { item: 'minecraft:string' },
+      { item: 'minecraft:paper' },
+    ],
     result: {
       id: SURVEYOR_TOOL_ITEM,
       count: 1,
       components: surveyorToolComponents(),
+    },
+  })
+
+  // Avance de colocación de Bloque de Topografía
+  putJson('data/builder_tables_generated/advancement/placed_surveyor.json', {
+    criteria: {
+      place_surveyor: {
+        trigger: 'minecraft:placed_block',
+        conditions: {
+          location: [
+            {
+              condition: 'minecraft:location_check',
+              predicate: { block: { blocks: SURVEYOR_BLOCK } },
+            },
+          ],
+        },
+      },
+    },
+    rewards: {
+      function: 'builder_tables_generated:surveyor/on_placed_advancement',
     },
   })
 
@@ -223,6 +235,43 @@ export function addSurveyorAssets(
     ]),
   )
 
+  // Despachador tras avance de colocación
+  put(
+    root + 'on_placed_advancement.mcfunction',
+    mcfunction([
+      'advancement revoke @s only builder_tables_generated:placed_surveyor',
+      '# Si tiene el bloque de topografía en mano principal o secundaria, activar raycast de colocación',
+      'execute if items entity @s weapon.mainhand minecraft:note_block[custom_data~{builder_tables_surveyor:1b}] run function builder_tables_generated:controller_block/ray_place',
+      'execute if items entity @s weapon.offhand minecraft:note_block[custom_data~{builder_tables_surveyor:1b}] run function builder_tables_generated:controller_block/ray_place',
+    ]),
+  )
+
+  // Función ejecutada cuando ray_place detecta que el bloque puesto es el de topografía
+  put(
+    root + 'placed.mcfunction',
+    mcfunction([
+      '# Eliminar anclajes previos en esta ubicación exacta si existieran',
+      'kill @e[type=minecraft:marker,tag=bt_surveyor_anchor,distance=..0.5]',
+      'summon minecraft:marker ~ ~ ~ {Tags:["bt_surveyor_anchor"]}',
+      'playsound minecraft:block.note_block.chime player @a ~ ~ ~ 1 1.5',
+      'tellraw @s [{"text":"[Topografía] ","color":"aqua","bold":true},{"text":"Bloque de Topografía y Obras colocado. Haz clic derecho en él para abrir el Centro de Control.","color":"gold"}]',
+    ]),
+  )
+
+  // Menú interactivo al hacer clic derecho en el bloque de topografía
+  put(
+    root + 'open.mcfunction',
+    mcfunction([
+      'playsound minecraft:block.note_block.chime player @s ~ ~ ~ 0.8 1.8',
+      '# Intentar abrir el diálogo nativo (1.21.2+ / 26.x)',
+      'dialog show @s builder_tables:surveyor_menu',
+      '# Mostrar fallback interactivo en chat con botones clicables',
+      'tellraw @s ["",{"text":"======== ","color":"dark_gray"},{"text":"[ CENTRO DE TOPOGRAFÍA Y OBRAS ]","color":"gold","bold":true},{"text":" ========","color":"dark_gray"}]',
+      'tellraw @s ["",{"text":"• ","color":"yellow"},{"text":"[ 📏 OBTENER CINTA ]","color":"aqua","bold":true,"clickEvent":{"action":"run_command","value":"/trigger bt_give_tape set 1"},"hoverEvent":{"action":"show_text","contents":"Recibir la cinta de medición"}},{"text":"  "},{"text":"[ 📋 COPIAR A NBT ]","color":"green","bold":true,"clickEvent":{"action":"run_command","value":"/trigger bt_surv_copy set 1"},"hoverEvent":{"action":"show_text","contents":"Guardar área como archivo .NBT"}},{"text":"  "},{"text":"[ 💥 DEMOLER Y VENDER (75%) ]","color":"gold","bold":true,"clickEvent":{"action":"run_command","value":"/trigger bt_surv_demo_ask set 1"},"hoverEvent":{"action":"show_text","contents":"Allana el terreno y cobra el 75% del valor en esmeraldas"}},{"text":"  "},{"text":"[ ✕ LIMPIAR ]","color":"red","clickEvent":{"action":"run_command","value":"/trigger bt_surv_clear set 1"},"hoverEvent":{"action":"show_text","contents":"Reiniciar selección de esquinas"}}]',
+      'tellraw @s {"text":"================================================","color":"dark_gray"}',
+    ]),
+  )
+
   // Inicialización de scoreboards
   put(
     root + 'init.mcfunction',
@@ -235,7 +284,11 @@ export function addSurveyorAssets(
       'scoreboard objectives add bt_surv_step dummy',
       'scoreboard objectives add bt_surv_blocks dummy',
       'scoreboard objectives add bt_surv_payout dummy',
-      'scoreboard objectives add bt_tape_used minecraft.used:minecraft.compass',
+      'scoreboard objectives add bt_tape_used minecraft.used:minecraft.carrot_on_a_stick',
+      'recipe give @a builder_tables:surveyor_block',
+      'recipe give @a builder_tables:surveyor_tape',
+      'recipe give @a builder_tables:planning_block',
+      'recipe give @a builder_tables:bank_card',
     ]),
   )
 
@@ -253,9 +306,9 @@ export function addSurveyorAssets(
       'execute as @a[scores={bt_give_tape=1..}] run function builder_tables:give_tape',
       'scoreboard players reset @a[scores={bt_give_tape=1..}] bt_give_tape',
 
-      '# Clic derecho con la cinta de topógrafo',
-      'execute as @a[scores={bt_tape_used=1..}] if items entity @s weapon.mainhand minecraft:compass[custom_data~{builder_tables_surveyor_tape:1b}] run function builder_tables_generated:surveyor/use_tape',
-      'execute as @a[scores={bt_tape_used=1..}] if items entity @s weapon.offhand minecraft:compass[custom_data~{builder_tables_surveyor_tape:1b}] run function builder_tables_generated:surveyor/use_tape',
+      '# Clic derecho con la cinta de topógrafo (carrot_on_a_stick)',
+      'execute as @a[scores={bt_tape_used=1..}] if items entity @s weapon.mainhand minecraft:carrot_on_a_stick[custom_data~{builder_tables_surveyor_tape:1b}] run function builder_tables_generated:surveyor/use_tape',
+      'execute as @a[scores={bt_tape_used=1..}] if items entity @s weapon.offhand minecraft:carrot_on_a_stick[custom_data~{builder_tables_surveyor_tape:1b}] run function builder_tables_generated:surveyor/use_tape',
       'scoreboard players reset @a[scores={bt_tape_used=1..}] bt_tape_used',
 
       '# Petición de copia a NBT',
@@ -284,7 +337,7 @@ export function addSurveyorAssets(
   put(
     root + 'use_tape.mcfunction',
     mcfunction([
-      '# Raycast hacia el bloque donde apunta el jugador para fijar esquina',
+      '# Alternar entre Esquina 1 y Esquina 2',
       'execute unless score @s bt_surv_step matches 1 run function builder_tables_generated:surveyor/set_corner_1',
       'execute if score @s bt_surv_step matches 1 run function builder_tables_generated:surveyor/set_corner_2',
     ]),
@@ -294,13 +347,11 @@ export function addSurveyorAssets(
   put(
     root + 'set_corner_1.mcfunction',
     mcfunction([
-      'tag @s add bt_current_surveyor',
       'kill @e[type=minecraft:marker,tag=bt_surv_c1]',
       'execute anchored eyes positioned ^ ^ ^3.5 summon minecraft:marker run function builder_tables_generated:surveyor/tag_corner_1',
-      'tag @s remove bt_current_surveyor',
       'scoreboard players set @s bt_surv_step 1',
       'playsound minecraft:block.note_block.bell player @s ~ ~ ~ 1 1.6',
-      'tellraw @s [{"text":"[Topografía] ","color":"aqua","bold":true},{"text":"Esquina 1 fijada en ","color":"green"},{"text":"tu posición de mira. Haz clic en la esquina opuesta para fijar la Esquina 2.","color":"yellow"}]',
+      'tellraw @s [{"text":"[Topografía] ","color":"aqua","bold":true},{"text":"Esquina 1 fijada. ","color":"green","bold":true},{"text":"Haz clic derecho en la esquina opuesta para fijar la Esquina 2.","color":"yellow"}]',
     ]),
   )
 
@@ -316,13 +367,11 @@ export function addSurveyorAssets(
   put(
     root + 'set_corner_2.mcfunction',
     mcfunction([
-      'tag @s add bt_current_surveyor',
       'kill @e[type=minecraft:marker,tag=bt_surv_c2]',
       'execute anchored eyes positioned ^ ^ ^3.5 summon minecraft:marker run function builder_tables_generated:surveyor/tag_corner_2',
-      'tag @s remove bt_current_surveyor',
       'scoreboard players set @s bt_surv_step 2',
       'playsound minecraft:block.anvil.land player @s ~ ~ ~ 0.8 1.4',
-      'tellraw @s [{"text":"[Topografía] ","color":"aqua","bold":true},{"text":"Esquina 2 fijada. ","color":"green"},{"text":"¡Área delimitada sin límites de tamaño! Haz clic derecho en el Bloque de Topografía para Copiar Plano o Demoler y Vender.","color":"gold"}]',
+      'tellraw @s [{"text":"[Topografía] ","color":"aqua","bold":true},{"text":"Esquina 2 fijada. ","color":"green","bold":true},{"text":"¡Área delimitada sin límites de tamaño! Haz clic derecho en el Bloque de Topografía para Copiar Plano o Demoler y Vender.","color":"gold"}]',
     ]),
   )
 
@@ -371,16 +420,10 @@ export function addSurveyorAssets(
       'execute unless entity @e[type=minecraft:marker,tag=bt_surv_c1,limit=1] run return 0',
       'execute unless entity @e[type=minecraft:marker,tag=bt_surv_c2,limit=1] run tellraw @s {"text":"[Topografía] Marca la Esquina 2 con la Cinta antes de demoler.","color":"red"}',
       'execute unless entity @e[type=minecraft:marker,tag=bt_surv_c2,limit=1] run return 0',
-      '# Abrir diálogo interactivo de confirmación',
-      'execute as @s run function builder_tables:controller/open_dialog_surveyor_confirm',
+      '# Abrir diálogo interactivo de confirmación y fallback en chat',
+      'dialog show @s builder_tables:surveyor_confirm_demo',
+      'tellraw @s [{"text":"[Topografía] Haz clic aquí para: ","color":"gold"},{"text":"[ CONFIRMAR DEMOLICIÓN Y COBRAR 75% ]","color":"red","bold":true,"clickEvent":{"action":"run_command","value":"/trigger bt_surv_demo_exec set 1"},"hoverEvent":{"action":"show_text","contents":"Allana el terreno entre las 2 esquinas y abona el 75% de los materiales"}}]',
     ]),
-  )
-
-  put(
-    'data/builder_tables/function/controller/open_dialog_surveyor_confirm.mcfunction',
-    '# Diálogo de confirmación de demolición\n' +
-      '# Abre surveyor_confirm_demo.json\n' +
-      'tellraw @s [{"text":"[Topografía] Haz clic aquí para: ","color":"gold"},{"text":"[ CONFIRMAR DEMOLICIÓN Y COBRAR 75% ]","color":"red","bold":true,"clickEvent":{"action":"run_command","value":"/trigger bt_surv_demo_exec set 1"},"hoverEvent":{"action":"show_text","contents":"Allana el terreno entre las 2 esquinas y abona el 75% de los materiales"}}]\n',
   )
 
   // Ejecución de Demolición y Venta (75% del valor de materiales)
