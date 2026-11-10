@@ -49,6 +49,8 @@ export type StructureAnalysis = {
   price: number
   stateCount: number
   materials: MaterialCount[]
+  /** Materiales originales antes de sustituciones o eliminación (incluye bloques de mods/desconocidos) */
+  rawMaterials?: MaterialCount[]
   removed: MaterialCount[]
   /** Entidades NBT descartadas para que el plano no replique IA, botín o comercio. */
   removedEntities: number

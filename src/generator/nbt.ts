@@ -14,6 +14,7 @@ import {
   applyPolicyState,
   createPolicyAccumulator,
   finalizePolicy,
+  isSurvivalDeniedId,
 } from './survival-policy'
 
 const AIR_BLOCKS = new Set([
@@ -412,7 +413,8 @@ function stateKey(state: BlockState) {
 function shouldRemoveState(state: BlockState) {
   return AUTO_REPAIRED_TRANSIENT_STATES.has(state.name) ||
     UNSUPPORTED_26_2.has(state.name) ||
-    !VANILLA_BLOCK_IDS.has(state.name)
+    !VANILLA_BLOCK_IDS.has(state.name) ||
+    isSurvivalDeniedId(state.name)
 }
 function parseMetadata(input: WorkerStructureInput) {
   const fallbackName = sourceStem(input.sourceName)
@@ -633,6 +635,7 @@ async function processInput(
   const keptBlocks: PositionedBlock[] = []
   const used = new Map<string, BlockState>()
   const materials = new Map<string, number>()
+  const rawMaterials = new Map<string, number>()
   const removed = new Map<string, number>()
   const viewerPositions: number[] = []
   const viewerStates: number[] = []
@@ -647,6 +650,14 @@ async function processInput(
 
     if (!Number.isInteger(oldId) || !mapping.has(oldId) || !states[oldId]) {
       throw new Error('La estructura referencia un índice de paleta inválido.')
+    }
+
+    const originalState = rawStates[oldId]
+    if (originalState && !AIR_BLOCKS.has(originalState.name)) {
+      rawMaterials.set(
+        originalState.name,
+        (rawMaterials.get(originalState.name) ?? 0) + 1,
+      )
     }
 
     const sourceState = states[oldId]
@@ -743,6 +754,10 @@ async function processInput(
     )
   }
 
+  const rawMaterialCounts = [...rawMaterials.entries()]
+    .map(([name, count]) => ({ name, count }))
+    .sort((left, right) => right.count - left.count)
+
   const analysis: StructureAnalysis = {
     key: input.key,
     sourceName: input.sourceName,
@@ -753,6 +768,7 @@ async function processInput(
     price: automaticPrice,
     stateCount: used.size,
     materials: materialCounts,
+    rawMaterials: rawMaterialCounts,
     removed: [...removed.entries()]
       .map(([name, count]) => ({ name, count }))
       .sort((left, right) => left.name.localeCompare(right.name)),

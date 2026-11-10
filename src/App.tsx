@@ -206,7 +206,9 @@ function App() {
               analysis,
               originalMaterials:
                 structure.originalMaterials ??
-                (analysis.status === 'ready' ? analysis.materials : undefined),
+                (analysis.status === 'ready'
+                  ? (analysis.rawMaterials ?? analysis.materials)
+                  : undefined),
               phase: analysis.status === 'ready' ? 'ready' : 'rejected',
             }
           }),
@@ -1001,13 +1003,16 @@ function App() {
                       </div>
                       {analysis?.status === 'ready' && analysis.removed.length ? (
                         <div className="removed-blocks-note">
-                          Se quitarán del resultado:{' '}
+                          Bloques omitidos (mods o no permitidos):{' '}
                           {analysis.removed
                             .map(
                               (material) =>
                                 material.name + ' × ' + material.count,
                             )
                             .join(', ')}
+                          <span style={{ display: 'block', fontSize: '0.75rem', opacity: 0.85, marginTop: '0.2rem' }}>
+                            (Se liberó la construcción omitiéndolos. Puedes sustituirlos en el panel superior si prefieres cambiarlos por otros bloques)
+                          </span>
                         </div>
                       ) : null}
                       {analysis?.status === 'ready' && analysis.policy?.dependencies.length ? (

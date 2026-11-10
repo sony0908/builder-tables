@@ -338,14 +338,19 @@ export function BlockReplacementPanel({
         {filteredMaterials.map((material) => {
           const replacement = activeReplacements[material.name]
           const isReplaced = Boolean(replacement)
+          const isUnknown = !isValidVanillaBlock(material.name)
           const displayId = replacement || material.name
 
           return (
             <div
               key={material.name}
-              className={`block-card ${isReplaced ? 'has-replacement' : ''}`}
+              className={`block-card ${isReplaced ? 'has-replacement' : ''} ${isUnknown && !isReplaced ? 'is-unknown-block' : ''}`}
               onClick={() => handleOpenModal(material)}
-              title="Haz clic para cambiar este bloque"
+              title={
+                isUnknown && !isReplaced
+                  ? 'Bloque desconocido o de mod: se omitirá automáticamente salvo que elijas un bloque para reemplazarlo'
+                  : 'Haz clic para cambiar este bloque'
+              }
               role="button"
               tabIndex={0}
               onKeyDown={(e) => {
@@ -372,11 +377,15 @@ export function BlockReplacementPanel({
                   {material.name.replace(/^minecraft:/, '')}
                 </span>
 
-                {isReplaced && (
+                {isReplaced ? (
                   <span className="block-card-replacement-indicator">
                     ➔ {formatBlockDisplayName(replacement!)}
                   </span>
-                )}
+                ) : isUnknown ? (
+                  <span className="block-card-mod-indicator" title="Se omitirá de la construcción salvo que selecciones un reemplazo">
+                    Mod (se omitirá)
+                  </span>
+                ) : null}
               </div>
             </div>
           )
@@ -425,7 +434,11 @@ export function BlockReplacementPanel({
                     assetFile={assetFile}
                     size={160}
                     count={activeModalBlock.count}
-                    subtitle="Bloque original presente"
+                    subtitle={
+                      !isValidVanillaBlock(activeModalBlock.name)
+                        ? 'Bloque de mod (se omitirá si no se cambia)'
+                        : 'Bloque original presente'
+                    }
                   />
                 </div>
 

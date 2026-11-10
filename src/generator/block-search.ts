@@ -268,12 +268,19 @@ export function isValidVanillaBlock(name: string): boolean {
  * Formatea un ID a nombre legible (en inglés legible o enriquecido).
  */
 export function formatBlockDisplayName(blockId: string): string {
-  const withoutNamespace = blockId.replace(/^minecraft:/, '')
-  return withoutNamespace
-    .split('_')
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ')
+  const parts = blockId.split(':')
+  const path = parts.length > 1 ? parts[1] : parts[0]
+  const prefix =
+    parts.length > 1 && parts[0] !== 'minecraft' ? `[${parts[0]}] ` : ''
+  return (
+    prefix +
+    path
+      .split('_')
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ')
+  )
 }
+
 
 export type BlockSearchResult = {
   id: string

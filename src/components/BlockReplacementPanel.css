@@ -230,7 +230,33 @@
   box-sizing: border-box;
 }
 
+.block-card.is-unknown-block {
+  border-color: rgba(245, 158, 11, 0.4);
+  background: color-mix(in srgb, #f59e0b 6%, var(--surface-muted));
+}
+
+.block-card-mod-indicator {
+  margin-top: 0.35rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  font-size: 0.725rem;
+  font-weight: 700;
+  color: #d97706;
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--radius-sm);
+  width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  box-sizing: border-box;
+}
+
 /* =========================================================================
+
    VENTANA MODAL / DIALOGO DE SUSTITUCION CON LOS DOS CUADROS
    ========================================================================= */
 .replacement-modal-backdrop {
