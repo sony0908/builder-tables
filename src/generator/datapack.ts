@@ -56,12 +56,14 @@ export async function generateArchive(
       'builder_tables:init',
       'builder_tables_generated:init',
       'builder_tables_generated:controller_block/init',
+      'builder_tables_generated:bank/init',
       'builder_tables_generated:surveyor/init',
     ],
   })
   putJson('data/minecraft/tags/function/tick.json', {
     values: [
       'builder_tables:tick',
+      'builder_tables_generated:bank/tick',
       'builder_tables_generated:surveyor/tick',
     ],
   })

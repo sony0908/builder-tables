@@ -123,11 +123,91 @@ function addBankAdvancement(putJson: JsonFileWriter) {
   })
 }
 
-function addBankFunctions(
+export function addBaseBankAssets(
   put: TextFileWriter,
-  structures: GeneratedStructure[],
+  putJson: JsonFileWriter,
 ) {
+  // Receta crafteable: solo papel, esmeralda, hierro y redstone
+  putJson('data/builder_tables/recipe/bank_card.json', {
+    type: 'minecraft:crafting_shapeless',
+    category: 'equipment',
+    ingredients: [
+      'minecraft:paper',
+      'minecraft:emerald',
+      'minecraft:iron_ingot',
+      'minecraft:redstone',
+    ],
+    result: {
+      id: BANK_CARD_ITEM,
+      count: 1,
+      components: bankCardComponents(),
+    },
+  })
+
+  // Comando directo para obtener la tarjeta en creativo / pruebas
+  put(
+    'data/builder_tables/function/give_card.mcfunction',
+    '# Tarjeta Bancaria para Builder Tables.\ngive @s ' +
+      bankCardItemSnbt() +
+      '\n',
+  )
+
+  addBankDialog(putJson)
+  addBankAdvancement(putJson)
+
   const root = 'data/builder_tables_generated/function/bank/'
+
+  // Inicialización global del sistema bancario
+  put(
+    root + 'init.mcfunction',
+    mcfunction([
+      'scoreboard objectives add bt_bank dummy',
+      'scoreboard objectives add bt_deposit trigger',
+      'scoreboard objectives add bt_withdraw trigger',
+      'scoreboard objectives add bt_balance trigger',
+      'scoreboard objectives add bt_bank_menu trigger',
+      'scoreboard objectives add bt_has_card dummy',
+      'scoreboard objectives add bt_temp dummy',
+      'scoreboard objectives add bt_temp_emeralds dummy',
+      'scoreboard objectives add bt_temp_blocks dummy',
+      'scoreboard objectives add bt_bank_timer dummy',
+      'scoreboard objectives add bt_interest dummy',
+      'scoreboard objectives add bt_interest_math dummy',
+      'scoreboard players set #hundred bt_interest_math 100',
+      'scoreboard players set #cap bt_interest_math 250',
+      'scoreboard players set #nine bt_price 9',
+      'recipe give @a builder_tables:bank_card',
+      'advancement revoke @a only builder_tables_generated:used_bank_card',
+    ]),
+  )
+
+  // Tick loop global del sistema bancario
+  put(
+    root + 'tick.mcfunction',
+    mcfunction([
+      'scoreboard players enable @a bt_deposit',
+      'scoreboard players enable @a bt_withdraw',
+      'scoreboard players enable @a bt_balance',
+      'scoreboard players enable @a bt_bank_menu',
+      '# Fail-safe: Si el avance used_bank_card fue otorgado, abrir menu y revocar',
+      'execute as @a[advancements={builder_tables_generated:used_bank_card=true}] run function builder_tables_generated:bank/open',
+      'execute as @a[scores={bt_deposit=1}] run function builder_tables_generated:bank/deposit_64_emeralds',
+      'execute as @a[scores={bt_deposit=2}] run function builder_tables_generated:bank/deposit_64_blocks',
+      'execute as @a[scores={bt_deposit=3}] run function builder_tables_generated:bank/deposit_all',
+      'scoreboard players reset @a[scores={bt_deposit=1..}] bt_deposit',
+      'execute as @a[scores={bt_withdraw=1}] run function builder_tables_generated:bank/withdraw_64_emeralds',
+      'execute as @a[scores={bt_withdraw=2}] run function builder_tables_generated:bank/withdraw_64_blocks',
+      'scoreboard players reset @a[scores={bt_withdraw=1..}] bt_withdraw',
+      'execute as @a[scores={bt_balance=1..}] run function builder_tables_generated:bank/balance',
+      'scoreboard players reset @a[scores={bt_balance=1..}] bt_balance',
+      'execute as @a[scores={bt_bank_menu=1..}] run function builder_tables_generated:bank/open',
+      'scoreboard players reset @a[scores={bt_bank_menu=1..}] bt_bank_menu',
+      '# Ciclo diario de intereses bancarios (24000 ticks = 1 dia de Minecraft)',
+      'scoreboard players add #timer bt_bank_timer 1',
+      'execute if score #timer bt_bank_timer matches 24000.. run function builder_tables_generated:bank/apply_interest',
+      'execute if score #timer bt_bank_timer matches 24000.. run scoreboard players set #timer bt_bank_timer 0',
+    ]),
+  )
 
   // Apertura y consulta
   put(
@@ -229,6 +309,16 @@ function addBankFunctions(
       'execute if score @s bt_interest matches 1.. run title @s actionbar [{"text":"+ ","color":"green","bold":true},{"score":{"name":"@s","objective":"bt_interest"},"color":"green","bold":true},{"text":" esmeraldas en intereses bancarios","color":"gold"}]',
     ]),
   )
+}
+
+export function addBankAssets(
+  put: TextFileWriter,
+  putJson: JsonFileWriter,
+  structures: GeneratedStructure[],
+) {
+  addBaseBankAssets(put, putJson)
+
+  const root = 'data/builder_tables_generated/function/bank/'
 
   // Cobro específico por estructura mediante saldo de tarjeta
   structures.forEach((structure) => {
@@ -252,39 +342,4 @@ function addBankFunctions(
       ]),
     )
   })
-}
-
-export function addBankAssets(
-  put: TextFileWriter,
-  putJson: JsonFileWriter,
-  structures: GeneratedStructure[],
-) {
-  // Receta crafteable: solo papel, esmeralda, hierro y redstone
-  putJson('data/builder_tables/recipe/bank_card.json', {
-    type: 'minecraft:crafting_shapeless',
-    category: 'equipment',
-    ingredients: [
-      'minecraft:paper',
-      'minecraft:emerald',
-      'minecraft:iron_ingot',
-      'minecraft:redstone',
-    ],
-    result: {
-      id: BANK_CARD_ITEM,
-      count: 1,
-      components: bankCardComponents(),
-    },
-  })
-
-  // Comando directo para obtener la tarjeta en creativo / pruebas
-  put(
-    'data/builder_tables/function/give_card.mcfunction',
-    '# Tarjeta Bancaria para Builder Tables.\ngive @s ' +
-      bankCardItemSnbt() +
-      '\n',
-  )
-
-  addBankDialog(putJson)
-  addBankAdvancement(putJson)
-  addBankFunctions(put, structures)
 }
