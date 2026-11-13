@@ -516,7 +516,7 @@ export function addControllerAssets(
   putJson('data/builder_tables/recipe/planning_block.json', {
     type: 'minecraft:crafting_shapeless',
     category: 'equipment',
-    ingredients: [{ item: CONTROLLER_BLOCK }, { item: 'minecraft:paper' }],
+    ingredients: [CONTROLLER_BLOCK, 'minecraft:paper'],
     result: {
       id: CONTROLLER_BLOCK,
       count: 1,
