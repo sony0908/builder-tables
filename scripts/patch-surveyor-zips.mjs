@@ -114,11 +114,21 @@ for (const zipPath of targetZips) {
           'scoreboard objectives add bt_bank_timer dummy\n' +
           'scoreboard objectives add bt_interest dummy\n' +
           'scoreboard objectives add bt_interest_math dummy\n' +
+          'scoreboard players set #ten bt_interest_math 10\n' +
           'scoreboard players set #hundred bt_interest_math 100\n' +
-          'scoreboard players set #cap bt_interest_math 250\n' +
+          'scoreboard players set #tier1_limit bt_interest_math 25000\n' +
+          'scoreboard players set #tier1_max bt_interest_math 2500\n' +
+          'scoreboard players set #cap bt_interest_math 5000\n' +
           'scoreboard players set #nine bt_price 9\n' +
           'recipe give @a builder_tables:bank_card\n' +
           'advancement revoke @a only builder_tables_generated:used_bank_card\n'
+        unzipped['data/builder_tables/function/init.mcfunction'] = strToU8(initCode)
+      } else {
+        // Actualizar constantes si ya existía el bloque con la versión anterior de 250
+        initCode = initCode.replace(
+          'scoreboard players set #hundred bt_interest_math 100\nscoreboard players set #cap bt_interest_math 250',
+          'scoreboard players set #ten bt_interest_math 10\nscoreboard players set #hundred bt_interest_math 100\nscoreboard players set #tier1_limit bt_interest_math 25000\nscoreboard players set #tier1_max bt_interest_math 2500\nscoreboard players set #cap bt_interest_math 5000'
+        )
         unzipped['data/builder_tables/function/init.mcfunction'] = strToU8(initCode)
       }
     } catch (e) {

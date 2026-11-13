@@ -31,6 +31,11 @@ export function bankCardComponents() {
         italic: false,
       },
       {
+        text: 'Genera 10% de interes diario (hasta 25k)',
+        color: 'green',
+        italic: false,
+      },
+      {
         text: 'Llévala contigo para pagar construcciones grandes',
         color: 'dark_gray',
         italic: false,
@@ -51,6 +56,7 @@ export function bankCardItemSnbt() {
     'item_name={text:"Tarjeta Bancaria",color:"gold",bold:true,italic:false},' +
     'lore=[{text:"Builder Tables Bank",color:"dark_aqua",italic:false},' +
     '{text:"Haz clic derecho para abrir tu cuenta",color:"gray",italic:false},' +
+    '{text:"Genera 10% de interes diario (hasta 25k)",color:"green",italic:false},' +
     '{text:"Llévala contigo para pagar construcciones grandes",color:"dark_gray",italic:false}],' +
     'consumable={consume_seconds:1000.0f,animation:"none",has_consume_particles:false,sound:"minecraft:ui.button.click"}]'
   )
@@ -65,7 +71,8 @@ function addBankDialog(putJson: JsonFileWriter) {
       contents: {
         text:
           'Gestiona el saldo de tu Tarjeta Bancaria.\n' +
-          'Puedes depositar esmeraldas y bloques para pagar construcciones de alto costo sin saturar tu inventario.',
+          'Puedes depositar esmeraldas y bloques para pagar construcciones de alto costo sin saturar tu inventario.\n\n' +
+          '§aInterés diario:§r 10% hasta 25,000 esmeraldas (luego 1% sobre el excedente).',
       },
     },
     columns: 2,
@@ -173,8 +180,11 @@ export function addBaseBankAssets(
       'scoreboard objectives add bt_bank_timer dummy',
       'scoreboard objectives add bt_interest dummy',
       'scoreboard objectives add bt_interest_math dummy',
+      'scoreboard players set #ten bt_interest_math 10',
       'scoreboard players set #hundred bt_interest_math 100',
-      'scoreboard players set #cap bt_interest_math 250',
+      'scoreboard players set #tier1_limit bt_interest_math 25000',
+      'scoreboard players set #tier1_max bt_interest_math 2500',
+      'scoreboard players set #cap bt_interest_math 5000',
       'scoreboard players set #nine bt_price 9',
       'recipe give @a builder_tables:bank_card',
       'advancement revoke @a only builder_tables_generated:used_bank_card',
@@ -290,7 +300,9 @@ export function addBaseBankAssets(
     ]),
   )
 
-  // Intereses bancarios diarios (1% diario, tope 250, notificación por actionbar)
+  // Intereses bancarios diarios escalonados:
+  // Nivel 1 (<= 25,000): 10% diario
+  // Nivel 2 (> 25,000): 2,500 base + 1% sobre excedente (tope global 5,000)
   put(
     root + 'apply_interest.mcfunction',
     mcfunction([
@@ -301,9 +313,18 @@ export function addBaseBankAssets(
   put(
     root + 'player_interest.mcfunction',
     mcfunction([
-      'scoreboard players operation @s bt_interest = @s bt_bank',
-      'scoreboard players operation @s bt_interest /= #hundred bt_interest_math',
-      'execute if score @s bt_interest matches 251.. run scoreboard players operation @s bt_interest = #cap bt_interest_math',
+      '# Nivel 1: Saldo hasta 25,000 esmeraldas -> 10% diario (dividido por 10)',
+      'execute if score @s bt_bank matches ..25000 run scoreboard players operation @s bt_interest = @s bt_bank',
+      'execute if score @s bt_bank matches ..25000 run scoreboard players operation @s bt_interest /= #ten bt_interest_math',
+      '# Nivel 2: Saldo mayor a 25,000 esmeraldas -> 2,500 base (10% de 25k) + 1% del excedente',
+      'execute if score @s bt_bank matches 25001.. run scoreboard players operation @s bt_temp = @s bt_bank',
+      'execute if score @s bt_bank matches 25001.. run scoreboard players operation @s bt_temp -= #tier1_limit bt_interest_math',
+      'execute if score @s bt_bank matches 25001.. run scoreboard players operation @s bt_temp /= #hundred bt_interest_math',
+      'execute if score @s bt_bank matches 25001.. run scoreboard players operation @s bt_interest = #tier1_max bt_interest_math',
+      'execute if score @s bt_bank matches 25001.. run scoreboard players operation @s bt_interest += @s bt_temp',
+      '# Tope maximo global (5,000 esmeraldas diarias)',
+      'execute if score @s bt_interest matches 5001.. run scoreboard players operation @s bt_interest = #cap bt_interest_math',
+      '# Aplicar interes al saldo y notificar al jugador',
       'execute if score @s bt_interest matches 1.. run scoreboard players operation @s bt_bank += @s bt_interest',
       'execute if score @s bt_interest matches 1.. run playsound minecraft:block.amethyst_block.chime player @s ~ ~ ~ 0.8 1.2',
       'execute if score @s bt_interest matches 1.. run title @s actionbar [{"text":"+ ","color":"green","bold":true},{"score":{"name":"@s","objective":"bt_interest"},"color":"green","bold":true},{"text":" esmeraldas en intereses bancarios","color":"gold"}]',

@@ -340,8 +340,11 @@ const BANK_TRIGGER_OBJECTIVES = [
           ),
         )
         .concat([
+          'scoreboard players set #ten bt_interest_math 10',
           'scoreboard players set #hundred bt_interest_math 100',
-          'scoreboard players set #cap bt_interest_math 250',
+          'scoreboard players set #tier1_limit bt_interest_math 25000',
+          'scoreboard players set #tier1_max bt_interest_math 2500',
+          'scoreboard players set #cap bt_interest_math 5000',
           'advancement revoke @a only builder_tables_generated:placed_controller',
           'advancement revoke @a only builder_tables_generated:placed_surveyor',
           'advancement revoke @a only builder_tables_generated:used_controller',

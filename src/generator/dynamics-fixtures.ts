@@ -200,9 +200,10 @@ export function runDynamicsFixtures() {
   // apply_interest debe ejecutarse sobre todos los jugadores
   assertIncludes(applyInterest, 'execute as @a run function builder_tables_generated:bank/player_interest')
 
-  // player_interest: cálculo 1% usando constante #hundred (÷100)
-  assertIncludes(playerInterest, 'bt_interest /= #hundred bt_interest_math')
-  // player_interest: aplica tope de 250 (#cap)
+  // player_interest: cálculo escalonado usando constantes #ten y #hundred
+  assertIncludes(playerInterest, 'bt_interest /= #ten bt_interest_math')
+  assertIncludes(playerInterest, 'bt_temp /= #hundred bt_interest_math')
+  // player_interest: aplica tope global de 5000 (#cap)
   assertIncludes(playerInterest, '#cap bt_interest_math')
   // player_interest: suma intereses al saldo
   assertIncludes(playerInterest, 'bt_bank += @s bt_interest')
@@ -222,38 +223,54 @@ export function runDynamicsFixtures() {
   // Objetivos de intereses registrados en init
   assertIncludes(controllerInit, 'bt_bank_timer')
   assertIncludes(controllerInit, 'bt_interest')
+  assertIncludes(controllerInit, '#ten bt_interest_math')
   assertIncludes(controllerInit, '#hundred bt_interest_math')
+  assertIncludes(controllerInit, '#tier1_limit bt_interest_math')
+  assertIncludes(controllerInit, '#tier1_max bt_interest_math')
   assertIncludes(controllerInit, '#cap bt_interest_math')
 
   // ── Validación matemática del cálculo de intereses ───────────────────────
   // Replica la lógica de player_interest.mcfunction en JS
   // Minecraft usa división entera (trunca hacia cero, como Math.trunc)
   function calcInterest(balance: number): number {
-    const interest = Math.trunc(balance / 100) // 1% entero
-    const capped = interest > 250 ? 250 : interest // tope de 250
+    if (balance <= 0) return 0
+    let interest = 0
+    if (balance <= 25000) {
+      interest = Math.trunc(balance / 10) // Tramo 1: 10% entero
+    } else {
+      const excess = balance - 25000
+      const excessInterest = Math.trunc(excess / 100) // Tramo 2: 1% entero sobre excedente
+      interest = 2500 + excessInterest
+    }
+    const capped = interest > 5000 ? 5000 : interest // tope global de 5000
     return capped >= 1 ? capped : 0 // mínimo 1 para aplicar
   }
 
   // Saldo insuficiente → sin interés
   if (calcInterest(0) !== 0)   throw new Error('Saldo 0 no debe generar interés')
-  if (calcInterest(99) !== 0)  throw new Error('Saldo 99 no debe generar interés (99÷100=0 entero)')
+  if (calcInterest(9) !== 0)   throw new Error('Saldo 9 no debe generar interés (9÷10=0 entero)')
 
-  // Mínimo para generar interés
-  if (calcInterest(100) !== 1) throw new Error('Saldo 100 debe generar exactamente 1 esmeralda de interés')
+  // Mínimo para generar interés: 10 esmeraldas generan 1
+  if (calcInterest(10) !== 1)  throw new Error('Saldo 10 debe generar exactamente 1 esmeralda de interés')
 
-  // Saldo típico
-  if (calcInterest(1000) !== 10)   throw new Error('Saldo 1000 debe generar 10 esmeraldas')
-  if (calcInterest(5000) !== 50)   throw new Error('Saldo 5000 debe generar 50 esmeraldas')
+  // Saldo típico tramo 1 (10%)
+  if (calcInterest(100) !== 10)     throw new Error('Saldo 100 debe generar 10 esmeraldas')
+  if (calcInterest(1000) !== 100)   throw new Error('Saldo 1000 debe generar 100 esmeraldas')
+  if (calcInterest(5000) !== 500)   throw new Error('Saldo 5000 debe generar 500 esmeraldas')
 
-  // Justo en el tope: 25000 ÷ 100 = 250 (exacto, sin truncar)
-  if (calcInterest(25000) !== 250) throw new Error('Saldo 25000 debe generar exactamente 250 (tope)')
+  // Justo en el límite del tramo 1: 25000 ÷ 10 = 2500
+  if (calcInterest(25000) !== 2500) throw new Error('Saldo 25000 debe generar exactamente 2500')
 
-  // Por encima del tope → se limita a 250
-  if (calcInterest(25001) !== 250) throw new Error('Saldo 25001 debe limitarse a 250')
-  if (calcInterest(100000) !== 250) throw new Error('Saldo muy alto debe limitarse a 250 por ciclo')
+  // Tramo 2: 2500 base + 1% del excedente
+  if (calcInterest(25001) !== 2500) throw new Error('Saldo 25001 debe generar 2500 (excedente 1÷100=0)')
+  if (calcInterest(25100) !== 2501) throw new Error('Saldo 25100 debe generar 2501')
+  if (calcInterest(35000) !== 2600) throw new Error('Saldo 35000 debe generar 2600')
+  if (calcInterest(54144) !== 2791) throw new Error('Saldo 54144 debe generar 2791 (2500 + 291)')
+  if (calcInterest(100000) !== 3250) throw new Error('Saldo 100000 debe generar 3250 (2500 + 750)')
 
-  // Caso real de la imagen: saldo 54144 → trunc(54144/100)=541 → tope → 250
-  if (calcInterest(54144) !== 250) throw new Error('Saldo 54144 debe estar limitado a 250')
+  // Tope global de 5000
+  if (calcInterest(275000) !== 5000) throw new Error('Saldo 275000 debe generar 5000')
+  if (calcInterest(300000) !== 5000) throw new Error('Saldo muy alto debe limitarse a 5000 por ciclo')
 
   // ── Corrección de cobro bancario: bt_temp como snapshot ──────────────────
   // bankCharge debe capturar bt_bank en bt_temp ANTES de modificarlo
