@@ -702,7 +702,16 @@ async function processInput(
       'la entidad de bloque en [' + position.join(', ') + ']',
       policyAccumulator,
     )
-    if (error) throw new Error(error)
+    if (error) {
+      const nbtRecord = isNbtRecord(block.nbt) ? block.nbt : undefined
+      const blockEntityId =
+        typeof nbtRecord?.id === 'string' ? nbtRecord.id : 'bloque_con_nbt'
+      removed.set(
+        blockEntityId + ' (datos NBT omitidos por seguridad survival)',
+        (removed.get(blockEntityId + ' (datos NBT omitidos por seguridad survival)') ?? 0) + 1,
+      )
+      delete block.nbt
+    }
   }
 
   // Entities can carry AI, inventories, loot, passengers and other runtime

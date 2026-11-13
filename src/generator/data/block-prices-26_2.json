@@ -1075,6 +1075,302 @@
     {
       "id": "minecraft:piglin_wall_head",
       "points": 750
+    },
+    {
+      "id": "minecraft:wheat_seeds",
+      "points": 2
+    },
+    {
+      "id": "minecraft:wheat",
+      "points": 3
+    },
+    {
+      "id": "minecraft:beetroot",
+      "points": 3
+    },
+    {
+      "id": "minecraft:baked_potato",
+      "points": 4
+    },
+    {
+      "id": "minecraft:poisonous_potato",
+      "points": 1
+    },
+    {
+      "id": "minecraft:golden_carrot",
+      "points": 25
+    },
+    {
+      "id": "minecraft:apple",
+      "points": 5
+    },
+    {
+      "id": "minecraft:melon_slice",
+      "points": 1
+    },
+    {
+      "id": "minecraft:bread",
+      "points": 8
+    },
+    {
+      "id": "minecraft:cookie",
+      "points": 2
+    },
+    {
+      "id": "minecraft:cake",
+      "points": 30
+    },
+    {
+      "id": "minecraft:pumpkin_pie",
+      "points": 15
+    },
+    {
+      "id": "minecraft:sugar",
+      "points": 2
+    },
+    {
+      "id": "minecraft:egg",
+      "points": 2
+    },
+    {
+      "id": "minecraft:porkchop",
+      "points": 4
+    },
+    {
+      "id": "minecraft:cooked_porkchop",
+      "points": 5
+    },
+    {
+      "id": "minecraft:beef",
+      "points": 4
+    },
+    {
+      "id": "minecraft:cooked_beef",
+      "points": 5
+    },
+    {
+      "id": "minecraft:chicken",
+      "points": 3
+    },
+    {
+      "id": "minecraft:cooked_chicken",
+      "points": 4
+    },
+    {
+      "id": "minecraft:mutton",
+      "points": 4
+    },
+    {
+      "id": "minecraft:cooked_mutton",
+      "points": 5
+    },
+    {
+      "id": "minecraft:rabbit",
+      "points": 4
+    },
+    {
+      "id": "minecraft:cooked_rabbit",
+      "points": 5
+    },
+    {
+      "id": "minecraft:rabbit_stew",
+      "points": 15
+    },
+    {
+      "id": "minecraft:mushroom_stew",
+      "points": 10
+    },
+    {
+      "id": "minecraft:beetroot_soup",
+      "points": 10
+    },
+    {
+      "id": "minecraft:cod",
+      "points": 3
+    },
+    {
+      "id": "minecraft:cooked_cod",
+      "points": 4
+    },
+    {
+      "id": "minecraft:salmon",
+      "points": 3
+    },
+    {
+      "id": "minecraft:cooked_salmon",
+      "points": 4
+    },
+    {
+      "id": "minecraft:tropical_fish",
+      "points": 5
+    },
+    {
+      "id": "minecraft:pufferfish",
+      "points": 8
+    },
+    {
+      "id": "minecraft:rabbit_hide",
+      "points": 3
+    },
+    {
+      "id": "minecraft:stick",
+      "points": 1
+    },
+    {
+      "id": "minecraft:bone",
+      "points": 4
+    },
+    {
+      "id": "minecraft:bone_meal",
+      "points": 2
+    },
+    {
+      "id": "minecraft:gunpowder",
+      "points": 8
+    },
+    {
+      "id": "minecraft:rotten_flesh",
+      "points": 1
+    },
+    {
+      "id": "minecraft:spider_eye",
+      "points": 5
+    },
+    {
+      "id": "minecraft:fermented_spider_eye",
+      "points": 8
+    },
+    {
+      "id": "minecraft:magma_cream",
+      "points": 60
+    },
+    {
+      "id": "minecraft:eye_of_ender",
+      "points": 35
+    },
+    {
+      "id": "minecraft:phantom_membrane",
+      "points": 20
+    },
+    {
+      "id": "minecraft:prismarine_shard",
+      "points": 8
+    },
+    {
+      "id": "minecraft:prismarine_crystals",
+      "points": 12
+    },
+    {
+      "id": "minecraft:ink_sac",
+      "points": 3
+    },
+    {
+      "id": "minecraft:glow_ink_sac",
+      "points": 6
+    },
+    {
+      "id": "minecraft:turtle_scute",
+      "points": 20
+    },
+    {
+      "id": "minecraft:armadillo_scute",
+      "points": 15
+    },
+    {
+      "id": "minecraft:snowball",
+      "points": 1
+    },
+    {
+      "id": "minecraft:clay_ball",
+      "points": 2
+    },
+    {
+      "id": "minecraft:brick",
+      "points": 3
+    },
+    {
+      "id": "minecraft:nether_brick",
+      "points": 3
+    },
+    {
+      "id": "minecraft:bowl",
+      "points": 1
+    },
+    {
+      "id": "minecraft:arrow",
+      "points": 3
+    },
+    {
+      "id": "minecraft:spectral_arrow",
+      "points": 6
+    },
+    {
+      "id": "minecraft:charcoal",
+      "points": 4
+    },
+    {
+      "id": "minecraft:milk_bucket",
+      "points": 70
+    },
+    {
+      "id": "minecraft:shears",
+      "points": 40
+    },
+    {
+      "id": "minecraft:fishing_rod",
+      "points": 10
+    },
+    {
+      "id": "minecraft:carrot_on_a_stick",
+      "points": 15
+    },
+    {
+      "id": "minecraft:warped_fungus_on_a_stick",
+      "points": 15
+    },
+    {
+      "id": "minecraft:compass",
+      "points": 85
+    },
+    {
+      "id": "minecraft:clock",
+      "points": 125
+    },
+    {
+      "id": "minecraft:spyglass",
+      "points": 30
+    },
+    {
+      "id": "minecraft:lead",
+      "points": 15
+    },
+    {
+      "id": "minecraft:glass_bottle",
+      "points": 2
+    },
+    {
+      "id": "minecraft:potion",
+      "points": 15
+    },
+    {
+      "id": "minecraft:splash_potion",
+      "points": 25
+    },
+    {
+      "id": "minecraft:lingering_potion",
+      "points": 40
+    },
+    {
+      "id": "minecraft:crossbow",
+      "points": 35
+    },
+    {
+      "id": "minecraft:shield",
+      "points": 30
+    },
+    {
+      "id": "minecraft:bundle",
+      "points": 25
     }
   ],
   "recipeFloors": [
