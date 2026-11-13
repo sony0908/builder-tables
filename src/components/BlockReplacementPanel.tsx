@@ -8,6 +8,7 @@ import {
   RotateCcw,
   Search,
   Sparkles,
+  Trash2,
   X,
 } from 'lucide-react'
 import type { MaterialCount } from '../generator/types'
@@ -109,6 +110,7 @@ function getSmartFamilySuggestions(sourceBlock: string): string[] {
 
 const COLOR_AND_CATEGORY_FILTERS = [
   { label: 'Todos', query: '' },
+  { label: '🗑️ Aire / Eliminar', query: 'aire' },
   { label: 'Madera', query: 'madera' },
   { label: 'Piedra', query: 'piedra' },
   { label: 'Cristal', query: 'cristal' },
@@ -382,8 +384,10 @@ export function BlockReplacementPanel({
                 </span>
 
                 {isReplaced ? (
-                  <span className="block-card-replacement-indicator">
-                    ➔ {formatBlockDisplayName(replacement!)}
+                  <span
+                    className={`block-card-replacement-indicator ${replacement === 'minecraft:air' ? 'is-air' : ''}`}
+                  >
+                    ➔ {replacement === 'minecraft:air' ? '🗑️ Aire (Eliminado)' : formatBlockDisplayName(replacement!)}
                   </span>
                 ) : isUnknown ? (
                   <span className="block-card-mod-indicator" title="Se omitirá de la construcción salvo que selecciones un reemplazo">
@@ -473,9 +477,22 @@ export function BlockReplacementPanel({
 
               {/* Selector y buscador inteligente del nuevo bloque */}
               <div className="target-picker-section">
+                <button
+                  type="button"
+                  className={`btn-air-shortcut ${pendingTargetBlock === 'minecraft:air' ? 'is-active' : ''}`}
+                  onClick={() => handleSelectTargetBlock('minecraft:air')}
+                >
+                  <Trash2 size={16} />
+                  <span>
+                    {pendingTargetBlock === 'minecraft:air'
+                      ? '✓ Seleccionado: Aire (Se eliminará este bloque de la obra)'
+                      : 'Eliminar este bloque (Cambiar a Aire)'}
+                  </span>
+                </button>
+
                 <div className="target-picker-header">
                   <label className="target-picker-label">
-                    Buscar o seleccionar el nuevo bloque:
+                    O busca otro bloque de reemplazo:
                   </label>
                   <span className="target-picker-hint">
                     Busca en español, inglés o por color (ej: "rojo", "blue", "madera", "cristal")

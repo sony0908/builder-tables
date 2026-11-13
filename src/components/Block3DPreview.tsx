@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
+import { Trash2 } from 'lucide-react'
 import { getMinecraftRenderer, getPreparedAssets } from './minecraft-renderer'
 import { formatBlockDisplayName } from '../generator/block-search'
 import type { MinecraftVersion } from '../generator/version-profiles'
@@ -164,6 +165,24 @@ export function Block3DPreview({
     )
   }
 
+  if (blockId === 'minecraft:air' || blockId === 'air') {
+    return (
+      <div className="block-3d-box is-air-deleted">
+        <div className="hologram-cube-wrap">
+          <div className="air-delete-icon-wrap">
+            <Trash2 size={44} color="#ef4444" />
+          </div>
+          <span className="hologram-text" style={{ color: '#ef4444' }}>
+            Aire (Bloque Eliminado)
+          </span>
+          <span className="hologram-subtext">
+            {subtitle || 'Este bloque será eliminado completamente de la construcción.'}
+          </span>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="block-3d-box is-active">
       <div
@@ -210,6 +229,26 @@ export function Block3DIcon({
   size?: number
   version?: MinecraftVersion
 }) {
+  if (blockId === 'minecraft:air' || blockId === 'air') {
+    return (
+      <div
+        className="block-3d-stage block-3d-stage-compact is-air-icon"
+        style={{
+          width: size,
+          height: size,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: 'rgba(239, 68, 68, 0.1)',
+          borderRadius: '4px',
+          border: '1px dashed rgba(239, 68, 68, 0.4)',
+        }}
+        title="Aire (Eliminar bloque)"
+      >
+        <Trash2 size={Math.max(14, Math.round(size * 0.45))} color="#ef4444" />
+      </div>
+    )
+  }
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [texturedKey, setTexturedKey] = useState('')
   const [failedKey, setFailedKey] = useState('')

@@ -6,6 +6,7 @@ export const VANILLA_BLOCK_SET = new Set<string>(VANILLA_BLOCK_IDS_26_2)
  * Bloques más comunes para sugerencias rápidas y datalist.
  */
 export const COMMON_BLOCKS: string[] = [
+  'minecraft:air',
   'minecraft:oak_planks',
   'minecraft:spruce_planks',
   'minecraft:birch_planks',
@@ -168,12 +169,29 @@ const CATEGORY_KEYWORDS: Record<string, string[]> = {
   wool: ['wool'],
   luz: ['sea_lantern', 'glowstone', 'shroomlight', 'lantern', 'redstone_lamp', 'froglight', 'ochre_froglight', 'pearlescent_froglight', 'verdant_froglight'],
   light: ['sea_lantern', 'glowstone', 'shroomlight', 'lantern', 'redstone_lamp', 'froglight'],
+  aire: ['air'],
+  air: ['air'],
+  vacio: ['air'],
+  vacío: ['air'],
+  eliminar: ['air'],
+  borrar: ['air'],
 }
 
 /**
  * Nombres y alias en español para resolución directa
  */
 const SPANISH_NAMES: Record<string, string> = {
+  // Aire y eliminación
+  aire: 'minecraft:air',
+  air: 'minecraft:air',
+  vacio: 'minecraft:air',
+  vacío: 'minecraft:air',
+  eliminar: 'minecraft:air',
+  borrar: 'minecraft:air',
+  quitar: 'minecraft:air',
+  ninguno: 'minecraft:air',
+  nada: 'minecraft:air',
+
   // Maderas
   roble: 'minecraft:oak_planks',
   madera: 'minecraft:oak_planks',
@@ -238,8 +256,24 @@ const SPANISH_NAMES: Record<string, string> = {
 export function normalizeBlockName(raw: string): string | null {
   if (!raw || typeof raw !== 'string') return null
   let name = raw.trim().toLowerCase()
-  if (!name || name === 'air' || name === 'minecraft:air' || name === '0' || name === 'null' || name === 'vacio' || name === 'vacío' || name === 'none') {
+  if (!name || name === '0' || name === 'null') {
     return null
+  }
+
+  if (
+    name === 'air' ||
+    name === 'minecraft:air' ||
+    name === 'aire' ||
+    name === 'vacio' ||
+    name === 'vacío' ||
+    name === 'eliminar' ||
+    name === 'borrar' ||
+    name === 'quitar' ||
+    name === 'none' ||
+    name === 'ninguno' ||
+    name === 'nada'
+  ) {
+    return 'minecraft:air'
   }
 
   if (SPANISH_NAMES[name]) return SPANISH_NAMES[name]
@@ -268,6 +302,9 @@ export function isValidVanillaBlock(name: string): boolean {
  * Formatea un ID a nombre legible (en inglés legible o enriquecido).
  */
 export function formatBlockDisplayName(blockId: string): string {
+  if (blockId === 'minecraft:air' || blockId === 'air') {
+    return 'Aire (Eliminar bloque)'
+  }
   const parts = blockId.split(':')
   const path = parts.length > 1 ? parts[1] : parts[0]
   const prefix =
