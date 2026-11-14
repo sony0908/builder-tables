@@ -99,6 +99,29 @@ function downloadArchive(url: string, filename: string) {
   anchor.click()
 }
 
+function getSavedReplacements(fileName: string): Record<string, string> {
+  try {
+    const key = 'bt-replacements:' + fileName.toLowerCase()
+    const raw = localStorage.getItem(key)
+    return raw ? JSON.parse(raw) : {}
+  } catch {
+    return {}
+  }
+}
+
+function saveReplacements(fileName: string, replacements: Record<string, string>) {
+  try {
+    const key = 'bt-replacements:' + fileName.toLowerCase()
+    if (Object.keys(replacements).length === 0) {
+      localStorage.removeItem(key)
+    } else {
+      localStorage.setItem(key, JSON.stringify(replacements))
+    }
+  } catch {
+    // Ignore localStorage errors
+  }
+}
+
 async function buildWorkerInputs(
   structures: UploadedStructure[],
 ): Promise<WorkerStructureInput[]> {
@@ -386,11 +409,13 @@ function App() {
         const identity = file.name.toLowerCase() + ':' + file.size
         if (known.has(identity)) return
 
+        const saved = getSavedReplacements(file.name)
         next.push({
           id: crypto.randomUUID(),
           file,
           metadataFile: sidecars.get(fileKey(file.name)),
           phase: 'queued',
+          replacements: Object.keys(saved).length > 0 ? saved : undefined,
         })
         known.add(identity)
       })
@@ -527,9 +552,13 @@ function App() {
     replacements: Record<string, string>,
   ) => {
     setStructures((current) =>
-      current.map((s) =>
-        s.id === structureId ? { ...s, replacements } : s,
-      ),
+      current.map((s) => {
+        if (s.id === structureId) {
+          saveReplacements(s.file.name, replacements)
+          return { ...s, replacements }
+        }
+        return s
+      }),
     )
     clearGeneratedDownload()
     setRevision((c) => c + 1)
@@ -537,10 +566,14 @@ function App() {
 
   const applyReplacementsToAll = (replacements: Record<string, string>) => {
     setStructures((current) =>
-      current.map((s) => ({
-        ...s,
-        replacements: { ...s.replacements, ...replacements },
-      })),
+      current.map((s) => {
+        const merged = { ...s.replacements, ...replacements }
+        saveReplacements(s.file.name, merged)
+        return {
+          ...s,
+          replacements: merged,
+        }
+      }),
     )
     clearGeneratedDownload()
     setRevision((c) => c + 1)
