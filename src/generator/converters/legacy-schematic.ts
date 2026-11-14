@@ -1,4 +1,4 @@
-import { Int32 } from 'nbtify'
+import { Int32, TAG, TAG_TYPE } from 'nbtify'
 import type { ConvertedStructure, NbtRecord } from './types'
 
 const WOOL_COLORS = [
@@ -675,8 +675,16 @@ export function convertLegacySchematicToVanilla(root: NbtRecord): ConvertedStruc
         const modernState = mapLegacyBlock(blockId, blockData)
         const paletteId = getOrAddPaletteEntry(modernState)
 
+        const pos = [new Int32(x), new Int32(y), new Int32(z)]
+        Object.defineProperty(pos, TAG_TYPE, {
+          value: TAG.INT,
+          enumerable: false,
+          configurable: true,
+          writable: true,
+        })
+
         const blockEntry: NbtRecord = {
-          pos: [new Int32(x), new Int32(y), new Int32(z)],
+          pos,
           state: new Int32(paletteId),
         }
 
@@ -690,8 +698,28 @@ export function convertLegacySchematicToVanilla(root: NbtRecord): ConvertedStruc
     }
   }
 
+  const size = [new Int32(width), new Int32(height), new Int32(length)]
+  Object.defineProperty(size, TAG_TYPE, {
+    value: TAG.INT,
+    enumerable: false,
+    configurable: true,
+    writable: true,
+  })
+  Object.defineProperty(palette, TAG_TYPE, {
+    value: TAG.COMPOUND,
+    enumerable: false,
+    configurable: true,
+    writable: true,
+  })
+  Object.defineProperty(blocks, TAG_TYPE, {
+    value: TAG.COMPOUND,
+    enumerable: false,
+    configurable: true,
+    writable: true,
+  })
+
   const vanillaRoot: NbtRecord = {
-    size: [new Int32(width), new Int32(height), new Int32(length)],
+    size,
     palette,
     blocks,
     DataVersion: new Int32(3955),

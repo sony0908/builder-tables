@@ -367,9 +367,27 @@ export function validateEmbeddedItemsForPolicy(
   return walk(value, undefined, 0, 1)
 }
 
-function withListType<T>(items: T[], source: unknown) {
+function inferListTagType(items: unknown[]): TagType {
+  if (items.length === 0) return TAG.COMPOUND
+  const first = items[0]
+  if (first instanceof Int32 || (typeof first === 'number' && Number.isInteger(first))) {
+    return TAG.INT
+  }
+  if (typeof first === 'string') return TAG.STRING
+  if (typeof first === 'object' && first !== null) {
+    if (TAG_TYPE in first) return (first as { [TAG_TYPE]: TagType })[TAG_TYPE]
+    return TAG.COMPOUND
+  }
+  return TAG.COMPOUND
+}
+
+function withListType<T>(items: T[], source?: unknown) {
+  const rawSourceType = (source as { [TAG_TYPE]?: TagType } | undefined)?.[TAG_TYPE]
+  const inferred = inferListTagType(items)
   const sourceType =
-    (source as { [TAG_TYPE]?: TagType })[TAG_TYPE] ?? TAG.COMPOUND
+    rawSourceType === TAG.COMPOUND && inferred === TAG.INT
+      ? TAG.INT
+      : (rawSourceType ?? inferred)
 
   Object.defineProperty(items, TAG_TYPE, {
     value: sourceType,
@@ -793,10 +811,9 @@ async function processInput(
   if (!includeTemplates) return { analysis, viewer }
 
   const writeOptions = {
-    rootName: decoded.rootName,
-    endian: decoded.endian,
-    compression: decoded.compression,
-    bedrockLevel: decoded.bedrockLevel,
+    rootName: '',
+    endian: 'big',
+    compression: 'gzip',
   } as const
 
   const previewParts: PreviewPart[] = []
@@ -896,18 +913,28 @@ function enforcePackageWorldLimits(results: ProcessedStructure[]): ProcessedStru
     const total = exceeded.get(limit.id)
     if (!total) return result
 
+    const notice =
+      'El paquete contiene ' +
+      total.count +
+      ' × ' +
+      limit.id +
+      ' (máximo sugerido: ' +
+      total.maximum +
+      ' por mundo).'
+
+    const existingNotices = result.analysis.policy?.notices ?? []
     return {
+      ...result,
       analysis: {
         ...result.analysis,
-        status: 'rejected',
-        error:
-          'El paquete contiene ' +
-          total.count +
-          ' × ' +
-          limit.id +
-          '; la política permite un máximo de ' +
-          total.maximum +
-          ' por mundo.',
+        policy: result.analysis.policy
+          ? {
+              ...result.analysis.policy,
+              notices: existingNotices.includes(notice)
+                ? existingNotices
+                : [...existingNotices, notice],
+            }
+          : undefined,
       },
     }
   })
@@ -968,7 +995,8 @@ export async function prepareStructures(inputs: WorkerStructureInput[]) {
 
   if (invalid) {
     throw new Error(
-      'Corrige o elimina las estructuras rechazadas antes de generar.',
+      invalid.analysis.error ||
+        'Corrige o elimina las estructuras rechazadas antes de generar.',
     )
   }
 

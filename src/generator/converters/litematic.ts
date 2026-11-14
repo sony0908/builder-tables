@@ -1,4 +1,4 @@
-import { Int32 } from 'nbtify'
+import { Int32, TAG, TAG_TYPE } from 'nbtify'
 import type { ConvertedStructure, NbtRecord } from './types'
 
 type RegionData = {
@@ -236,8 +236,15 @@ export function convertLitematicToVanilla(root: NbtRecord): ConvertedStructure {
   const blocks: NbtRecord[] = []
   for (const [key, { state, nbt }] of blockMap.entries()) {
     const [x, y, z] = key.split(',').map(Number)
+    const pos = [new Int32(x), new Int32(y), new Int32(z)]
+    Object.defineProperty(pos, TAG_TYPE, {
+      value: TAG.INT,
+      enumerable: false,
+      configurable: true,
+      writable: true,
+    })
     const blockEntry: NbtRecord = {
-      pos: [new Int32(x), new Int32(y), new Int32(z)],
+      pos,
       state: new Int32(state),
     }
     if (nbt) {
@@ -255,8 +262,28 @@ export function convertLitematicToVanilla(root: NbtRecord): ConvertedStructure {
 
   const dataVersion = Number(root.MinecraftDataVersion ?? 3955)
 
+  const size = [new Int32(totalWidth), new Int32(totalHeight), new Int32(totalLength)]
+  Object.defineProperty(size, TAG_TYPE, {
+    value: TAG.INT,
+    enumerable: false,
+    configurable: true,
+    writable: true,
+  })
+  Object.defineProperty(globalPalette, TAG_TYPE, {
+    value: TAG.COMPOUND,
+    enumerable: false,
+    configurable: true,
+    writable: true,
+  })
+  Object.defineProperty(blocks, TAG_TYPE, {
+    value: TAG.COMPOUND,
+    enumerable: false,
+    configurable: true,
+    writable: true,
+  })
+
   const vanillaRoot: NbtRecord = {
-    size: [new Int32(totalWidth), new Int32(totalHeight), new Int32(totalLength)],
+    size,
     palette: globalPalette,
     blocks,
     DataVersion: new Int32(dataVersion),

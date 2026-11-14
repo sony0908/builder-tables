@@ -3,6 +3,7 @@ import { convertSchemToVanilla } from '../src/generator/converters/schem'
 import { convertLitematicToVanilla } from '../src/generator/converters/litematic'
 import { detectNbtFormat, normalizeToVanilla } from '../src/generator/converters/index'
 import { analyzeInputs } from '../src/generator/nbt'
+import { generateArchive } from '../src/generator/datapack'
 
 async function runTests() {
   console.log('🧪 Iniciando tests de conversores (.schem y .litematic)...')
@@ -260,6 +261,31 @@ async function runTests() {
 
   console.log(`✅ Test 5 (MCEdit .schematic clásico 1.12 convertido exitosamente):`)
   console.log(`   - ${resLegacy.name} (${resLegacy.id}): ${resLegacy.count} bloques, precio ${resLegacy.price} esmeraldas`)
+
+  // ── TEST 6: Generación completa de paquete con formatos convertidos y reemplazo a aire ──
+  console.log('🧪 Ejecutando Test 6: Generación completa de datapack con .schematic y reemplazo a aire...')
+  const archive = await generateArchive([
+    {
+      key: 'casamodernamodernhouseflp8536422',
+      sourceName: 'casamodernamodernhouseflp8536422.schematic',
+      bytes: rawLegacyBytes.buffer,
+      replacements: {
+        'minecraft:granite': 'minecraft:air',
+        'minecraft:red_wool': 'minecraft:white_wool',
+      },
+    },
+    {
+      key: 'torre_magica',
+      sourceName: 'torre_magica.schem',
+      bytes: rawSchemBytes.buffer,
+    },
+  ])
+
+  if (!archive || archive.archive.byteLength === 0) {
+    throw new Error('La generación de archivo falló o produjo un ZIP vacío.')
+  }
+  console.log(`✅ Test 6 (Generación de paquete con .schem, .schematic y reemplazo a aire exitoso, ZIP: ${archive.archive.byteLength} bytes)`)
+
   console.log('🎉 Todos los tests de conversores pasaron satisfactoriamente.')
 }
 

@@ -1,4 +1,4 @@
-import { Int32 } from 'nbtify'
+import { Int32, TAG, TAG_TYPE } from 'nbtify'
 import type { ConvertedStructure, NbtRecord } from './types'
 
 export function parseBlockStateString(raw: string): {
@@ -176,8 +176,15 @@ export function convertSchemToVanilla(rootInput: NbtRecord): ConvertedStructure 
     for (let z = 0; z < length; z++) {
       for (let x = 0; x < width; x++) {
         const stateId = readVarInt()
+        const pos = [new Int32(x), new Int32(y), new Int32(z)]
+        Object.defineProperty(pos, TAG_TYPE, {
+          value: TAG.INT,
+          enumerable: false,
+          configurable: true,
+          writable: true,
+        })
         const blockEntry: NbtRecord = {
-          pos: [new Int32(x), new Int32(y), new Int32(z)],
+          pos,
           state: new Int32(stateId),
         }
         const te = tileEntityMap.get(`${x},${y},${z}`)
@@ -191,8 +198,28 @@ export function convertSchemToVanilla(rootInput: NbtRecord): ConvertedStructure 
 
   const dataVersion = Number(root.DataVersion ?? 3955)
 
+  const size = [new Int32(width), new Int32(height), new Int32(length)]
+  Object.defineProperty(size, TAG_TYPE, {
+    value: TAG.INT,
+    enumerable: false,
+    configurable: true,
+    writable: true,
+  })
+  Object.defineProperty(vanillaPalette, TAG_TYPE, {
+    value: TAG.COMPOUND,
+    enumerable: false,
+    configurable: true,
+    writable: true,
+  })
+  Object.defineProperty(blocks, TAG_TYPE, {
+    value: TAG.COMPOUND,
+    enumerable: false,
+    configurable: true,
+    writable: true,
+  })
+
   const vanillaRoot: NbtRecord = {
-    size: [new Int32(width), new Int32(height), new Int32(length)],
+    size,
     palette: vanillaPalette,
     blocks,
     DataVersion: new Int32(dataVersion),
