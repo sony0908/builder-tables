@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import {
   ACESFilmicToneMapping,
+  AmbientLight,
   Box3,
   BoxGeometry,
   Color,
@@ -160,13 +161,13 @@ export function MinecraftStructureViewer({
 
     renderer.outputColorSpace = SRGBColorSpace
     renderer.toneMapping = ACESFilmicToneMapping
-    renderer.toneMappingExposure = theme === 'dark' ? 1.02 : 1.1
+    renderer.toneMappingExposure = theme === 'dark' ? 1.38 : 1.3
     renderer.shadowMap.enabled = true
     renderer.shadowMap.type = PCFSoftShadowMap
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5))
 
     const scene = new Scene()
-    scene.background = new Color(theme === 'dark' ? '#101a29' : '#edf3fa')
+    scene.background = new Color(theme === 'dark' ? '#111a28' : '#edf3fa')
 
     const fallbackBounds = modelBounds(model)
     const activeBounds = fallbackBounds.clone()
@@ -182,21 +183,34 @@ export function MinecraftStructureViewer({
     controls.minDistance = Math.max(1.2, radius * 0.18)
     controls.maxDistance = radius * 26 + 320
 
+    // Luz ambiental uniforme para que ningún bloque quede en oscuridad total
+    const ambient = new AmbientLight('#ffffff', theme === 'dark' ? 1.6 : 1.3)
+    scene.add(ambient)
+
+    // Luz hemisférica con rebote claro desde el suelo para iluminar porches, aleros y partes bajas
     const hemisphere = new HemisphereLight(
-      theme === 'dark' ? '#b6d6ff' : '#d9ebff',
-      theme === 'dark' ? '#152337' : '#728199',
-      1.35,
+      theme === 'dark' ? '#d6e8ff' : '#ffffff',
+      theme === 'dark' ? '#687f9e' : '#94a3b8',
+      1.8,
     )
     scene.add(hemisphere)
 
-    const keyLight = new DirectionalLight('#fff4dc', 2.2)
-    keyLight.position.set(center.x + radius * 1.1, center.y + radius * 2.3, center.z + radius)
+    // Luz solar principal (Key Light)
+    const keyLight = new DirectionalLight('#fff9ee', 2.6)
+    keyLight.position.set(center.x + radius * 1.3, center.y + radius * 2.4, center.z + radius * 1.2)
     keyLight.castShadow = true
     keyLight.shadow.mapSize.set(1024, 1024)
+    keyLight.shadow.bias = -0.0005
     scene.add(keyLight)
 
-    const rimLight = new DirectionalLight('#80adff', 0.85)
-    rimLight.position.set(center.x - radius, center.y + radius * 1.2, center.z - radius * 1.35)
+    // Luz de relleno frontal/lateral contraria para evitar caras en penumbra
+    const fillLight = new DirectionalLight('#e0f2fe', 1.5)
+    fillLight.position.set(center.x - radius * 1.2, center.y + radius * 1.4, center.z + radius * 1.1)
+    scene.add(fillLight)
+
+    // Luz de contorno trasera para definir la silueta y dar volumen 3D
+    const rimLight = new DirectionalLight('#bae6fd', 1.3)
+    rimLight.position.set(center.x - radius * 0.8, center.y + radius * 1.8, center.z - radius * 1.4)
     scene.add(rimLight)
 
     const gridSize = Math.max(span.x, span.z, 4) * 1.2
@@ -412,7 +426,7 @@ export function MinecraftStructureViewer({
       controls.dispose()
       if (controllerRef.current) controllerRef.current = null
       detailedHandle?.dispose()
-      scene.remove(fallbackMesh, grid, hemisphere, keyLight, rimLight)
+      scene.remove(fallbackMesh, grid, ambient, hemisphere, keyLight, fillLight, rimLight)
       geometry.dispose()
       material.dispose()
       renderer.dispose()

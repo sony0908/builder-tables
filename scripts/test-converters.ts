@@ -199,6 +199,67 @@ async function runTests() {
   console.log(`✅ Test 4 (Pipeline completo de análisis) superado:`)
   console.log(`   - ${resSchem.name} (${resSchem.id}): ${resSchem.count} bloques, precio ${resSchem.price} esmeraldas`)
   console.log(`   - ${resLitematic.name} (${resLitematic.id}): ${resLitematic.count} bloques, precio ${resLitematic.price} esmeraldas`)
+
+  // ── TEST 5: Legacy MCEdit .schematic (Minecraft 1.12 y anteriores) ──────────
+  // Archivo con Width=2, Height=2, Length=2, Materials="Alpha", Blocks (byte[]), Data (byte[])
+  // Bloques: stone (granite), wood (birch), glass, stairs (oak facing south), wool (red), log (oak), stone_bricks (mossy), chest
+  const legacySchematicRoot = {
+    Width: 2,
+    Height: 2,
+    Length: 2,
+    Materials: 'Alpha',
+    Blocks: new Uint8Array([1, 5, 20, 53, 35, 17, 98, 54]),
+    Data: new Uint8Array([1, 2, 0, 2, 14, 0, 1, 3]),
+    TileEntities: [
+      {
+        id: 'Chest',
+        x: 1,
+        y: 1,
+        z: 1,
+        CustomName: 'Cofre Antiguo',
+      },
+    ],
+  }
+
+  const format5 = detectNbtFormat(legacySchematicRoot, 'casamodernamodernhouseflp8536422.schematic')
+  if (format5 !== 'legacy_schematic') {
+    throw new Error(`Detección falló: esperado 'legacy_schematic', obtenido '${format5}'`)
+  }
+
+  const rawLegacyBytes = await write(legacySchematicRoot, {
+    endian: 'big',
+    compression: 'gzip',
+    rootName: 'Schematic',
+  })
+
+  const legacyAnalysis = await analyzeInputs([
+    {
+      key: 'test_legacy',
+      sourceName: 'casamodernamodernhouseflp8536422.schematic',
+      bytes: rawLegacyBytes.buffer,
+    },
+  ])
+
+  const resLegacy = legacyAnalysis.structures[0]
+  if (!resLegacy || resLegacy.status !== 'ready') {
+    throw new Error(`Análisis de .schematic antiguo falló: ${resLegacy?.error}`)
+  }
+
+  if (resLegacy.id !== 'casamodernamodernhouseflp8536422') {
+    throw new Error(`ID incorrecto para .schematic: ${resLegacy.id}`)
+  }
+  if (resLegacy.sourceFormat !== 'legacy_schematic') {
+    throw new Error(`sourceFormat incorrecto: ${resLegacy.sourceFormat}`)
+  }
+
+  const materialsList = resLegacy.materials.map(m => m.name)
+  if (!materialsList.includes('minecraft:granite')) throw new Error('Falta minecraft:granite en materiales')
+  if (!materialsList.includes('minecraft:birch_planks')) throw new Error('Falta minecraft:birch_planks en materiales')
+  if (!materialsList.includes('minecraft:red_wool')) throw new Error('Falta minecraft:red_wool en materiales')
+  if (!materialsList.includes('minecraft:mossy_stone_bricks')) throw new Error('Falta minecraft:mossy_stone_bricks en materiales')
+
+  console.log(`✅ Test 5 (MCEdit .schematic clásico 1.12 convertido exitosamente):`)
+  console.log(`   - ${resLegacy.name} (${resLegacy.id}): ${resLegacy.count} bloques, precio ${resLegacy.price} esmeraldas`)
   console.log('🎉 Todos los tests de conversores pasaron satisfactoriamente.')
 }
 

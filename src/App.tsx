@@ -1002,6 +1002,9 @@ function App() {
                           {analysis?.sourceFormat === 'schem' && (
                             <span className="format-badge format-badge-schem">WorldEdit (.schem)</span>
                           )}
+                          {analysis?.sourceFormat === 'legacy_schematic' && (
+                            <span className="format-badge format-badge-schem">MCEdit (.schematic)</span>
+                          )}
                           {analysis?.sourceFormat === 'litematic' && (
                             <span className="format-badge format-badge-litematic">Litematica (.litematic)</span>
                           )}

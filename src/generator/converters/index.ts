@@ -3,11 +3,13 @@ import type { ConvertedStructure, NbtRecord } from './types'
 import { detectNbtFormat } from './detect'
 import { convertSchemToVanilla } from './schem'
 import { convertLitematicToVanilla } from './litematic'
+import { convertLegacySchematicToVanilla } from './legacy-schematic'
 
 export * from './types'
 export * from './detect'
 export * from './schem'
 export * from './litematic'
+export * from './legacy-schematic'
 
 export function normalizeToVanilla(
   root: NbtRecord,
@@ -21,6 +23,10 @@ export function normalizeToVanilla(
 
   if (format === 'schem') {
     return convertSchemToVanilla(root)
+  }
+
+  if (format === 'legacy_schematic') {
+    return convertLegacySchematicToVanilla(root)
   }
 
   return {

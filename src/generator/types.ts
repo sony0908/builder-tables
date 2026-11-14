@@ -55,8 +55,8 @@ export type StructureAnalysis = {
   /** Entidades NBT descartadas para que el plano no replique IA, botín o comercio. */
   removedEntities: number
   policy?: PolicySummary
-  /** Formato de origen detectado ('vanilla' | 'schem' | 'litematic') */
-  sourceFormat?: 'vanilla' | 'schem' | 'litematic'
+  /** Formato de origen detectado ('vanilla' | 'schem' | 'litematic' | 'legacy_schematic') */
+  sourceFormat?: 'vanilla' | 'schem' | 'litematic' | 'legacy_schematic'
   status: 'ready' | 'rejected'
   error?: string
 }
