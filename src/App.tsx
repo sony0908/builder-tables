@@ -37,6 +37,7 @@ import {
   BlockReplacementPanel,
   type BlockReplacementStructure,
 } from './components/BlockReplacementPanel'
+import { convertNbtBufferToVanilla } from './generator/converters'
 import type { MaterialCount } from './generator/types'
 import './App.css'
 
@@ -64,23 +65,19 @@ function formatBytes(bytes: number) {
   return (bytes / 1024).toFixed(1) + ' KB'
 }
 
-function stem(fileName: string, extension: string) {
-  return fileName.replace(new RegExp('\\' + extension + '$', 'i'), '')
+function structureStem(fileName: string) {
+  return fileName.replace(/\.(nbt|schem|schematic|litematic)$/i, '')
 }
 
-function nbtStem(fileName: string) {
-  return stem(fileName, '.nbt')
-}
-
-function fileKey(fileName: string, extension: string) {
-  return stem(fileName, extension).toLocaleLowerCase()
+function fileKey(fileName: string) {
+  return structureStem(fileName).toLowerCase()
 }
 
 function displayName(structure: UploadedStructure) {
   return (
     structure.nameOverride ||
     structure.analysis?.name ||
-    nbtStem(structure.file.name)
+    structureStem(structure.file.name)
   )
 }
 
@@ -330,17 +327,40 @@ function App() {
     }
   }, [revision])
 
+  const handleDownloadNbt = async (structure: UploadedStructure) => {
+    try {
+      const bytes = await structure.file.arrayBuffer()
+      const { bytes: nbtBytes } = await convertNbtBufferToVanilla(
+        bytes,
+        structure.file.name,
+      )
+      const blob = new Blob([nbtBytes as unknown as BlobPart], {
+        type: 'application/octet-stream',
+      })
+      const url = URL.createObjectURL(blob)
+      const baseName = structureStem(structure.file.name)
+      downloadArchive(url, `${baseName}.nbt`)
+      URL.revokeObjectURL(url)
+    } catch (e) {
+      console.error('Error al exportar a .nbt:', e)
+      alert(
+        'No se pudo convertir el archivo a .nbt: ' +
+          (e instanceof Error ? e.message : String(e)),
+      )
+    }
+  }
+
   const addFiles = (files: FileList | File[]) => {
     const allFiles = Array.from(files)
-    const nbtFiles = allFiles.filter((file) =>
-      file.name.toLowerCase().endsWith('.nbt'),
+    const structureFiles = allFiles.filter((file) =>
+      /\.(nbt|schem|schematic|litematic)$/i.test(file.name),
     )
     const sidecars = new Map<string, File>()
 
     allFiles
       .filter((file) => file.name.toLowerCase().endsWith('.json'))
       .forEach((file) => {
-        sidecars.set(fileKey(file.name, '.json'), file)
+        sidecars.set(fileKey(file.name), file)
       })
 
     setStructures((current) => {
@@ -351,7 +371,7 @@ function App() {
         ),
       )
       const next = current.map((structure) => {
-        const metadata = sidecars.get(fileKey(structure.file.name, '.nbt'))
+        const metadata = sidecars.get(fileKey(structure.file.name))
         return metadata
           ? {
               ...structure,
@@ -362,14 +382,14 @@ function App() {
           : structure
       })
 
-      nbtFiles.forEach((file) => {
+      structureFiles.forEach((file) => {
         const identity = file.name.toLowerCase() + ':' + file.size
         if (known.has(identity)) return
 
         next.push({
           id: crypto.randomUUID(),
           file,
-          metadataFile: sidecars.get(fileKey(file.name, '.nbt')),
+          metadataFile: sidecars.get(fileKey(file.name)),
           phase: 'queued',
         })
         known.add(identity)
@@ -726,8 +746,7 @@ function App() {
                 <span className="eyebrow">Paso 1</span>
                 <h2>Añade tus estructuras</h2>
                 <p>
-                  Selecciona NBT de Minecraft Java y, opcionalmente, un JSON
-                  con el mismo nombre para fijar el título de la construcción.
+                  Selecciona archivos .nbt, .schem (WorldEdit) o .litematic (Litematica). Opcionalmente un JSON con el mismo nombre para fijar el título.
                 </p>
               </div>
             </div>
@@ -745,9 +764,9 @@ function App() {
               <span className="dropzone-icon">
                 <FolderOpen size={29} />
               </span>
-              <strong>Arrastra tus archivos .nbt aquí</strong>
+              <strong>Arrastra tus archivos .nbt, .schem o .litematic aquí</strong>
               <span>
-                Puedes añadir un .json del mismo nombre para un título personalizado.
+                Conversión automática a NBT vanilla. Puedes añadir un .json con el mismo nombre para un título personalizado.
               </span>
               <button
                 className="secondary-button"
@@ -760,7 +779,7 @@ function App() {
                 ref={inputRef}
                 className="visually-hidden"
                 type="file"
-                accept=".nbt,.json"
+                accept=".nbt,.schem,.schematic,.litematic,.json"
                 multiple
                 onChange={onFileChange}
               />
@@ -980,6 +999,12 @@ function App() {
                         <span className="file-name">
                           <FileBox size={17} />
                           {structure.file.name}
+                          {analysis?.sourceFormat === 'schem' && (
+                            <span className="format-badge format-badge-schem">WorldEdit (.schem)</span>
+                          )}
+                          {analysis?.sourceFormat === 'litematic' && (
+                            <span className="format-badge format-badge-litematic">Litematica (.litematic)</span>
+                          )}
                         </span>
                         <span>
                           {analysis?.status === 'ready'
@@ -1001,6 +1026,17 @@ function App() {
                           ) : null}
                           {phaseLabel(structure)}
                         </span>
+                        {analysis?.status === 'ready' && analysis.sourceFormat && analysis.sourceFormat !== 'vanilla' ? (
+                          <button
+                            type="button"
+                            className="btn-download-nbt"
+                            onClick={() => handleDownloadNbt(structure)}
+                            title="Descargar esta construcción convertida a formato Vanilla .NBT para usar en Minecraft"
+                          >
+                            <Download size={13} />
+                            Descargar .nbt
+                          </button>
+                        ) : null}
                       </div>
                       {analysis?.status === 'ready' && analysis.removed.length ? (
                         <div className="removed-blocks-note">

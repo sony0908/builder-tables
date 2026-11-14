@@ -16,6 +16,7 @@ import {
   finalizePolicy,
   isSurvivalDeniedId,
 } from './survival-policy'
+import { normalizeToVanilla } from './converters/index'
 
 const AIR_BLOCKS = new Set([
   'minecraft:air',
@@ -87,7 +88,7 @@ type PositionedBlock = {
 }
 
 function sourceStem(sourceName: string) {
-  return sourceName.replace(/\.nbt$/i, '')
+  return sourceName.replace(/\.(nbt|schem|schematic|litematic)$/i, '')
 }
 
 export function structureId(raw: string) {
@@ -555,7 +556,9 @@ async function processInput(
     endian: 'big',
     rootName: true,
   })
-  const root = asRecord(decoded.data, 'La raíz NBT no es un compuesto.')
+  const rawRoot = asRecord(decoded.data, 'La raíz NBT no es un compuesto.')
+  const converted = normalizeToVanilla(rawRoot, input.sourceName)
+  const root = converted.root
 
   if (
     !Object.hasOwn(root, 'size') ||
@@ -771,7 +774,7 @@ async function processInput(
     key: input.key,
     sourceName: input.sourceName,
     id,
-    name: metadata.name,
+    name: metadata.name || converted.name || id,
     size,
     count: keptBlocks.length,
     price: automaticPrice,
@@ -783,6 +786,7 @@ async function processInput(
       .sort((left, right) => left.name.localeCompare(right.name)),
     removedEntities,
     policy: policy.summary,
+    sourceFormat: converted.format,
     status: 'ready',
   }
 

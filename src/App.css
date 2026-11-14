@@ -1569,3 +1569,67 @@ h2 {
     gap: 6px;
   }
 }
+
+/* Badges de formato y descarga directa NBT */
+.format-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  margin-left: 0.5rem;
+  vertical-align: middle;
+}
+.format-badge-schem {
+  background: rgba(14, 165, 233, 0.15);
+  color: #0284c7;
+  border: 1px solid rgba(14, 165, 233, 0.3);
+}
+.format-badge-litematic {
+  background: rgba(168, 85, 247, 0.15);
+  color: #9333ea;
+  border: 1px solid rgba(168, 85, 247, 0.3);
+}
+.btn-download-nbt {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.65rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--primary, #2563eb);
+  background: rgba(59, 130, 246, 0.08);
+  border: 1px solid rgba(59, 130, 246, 0.25);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  margin-left: 0.5rem;
+}
+.btn-download-nbt:hover {
+  background: var(--primary, #2563eb);
+  color: #fff;
+  border-color: var(--primary, #2563eb);
+}
+.theme-dark .format-badge-schem {
+  background: rgba(56, 189, 248, 0.2);
+  color: #7dd3fc;
+  border-color: rgba(56, 189, 248, 0.4);
+}
+.theme-dark .format-badge-litematic {
+  background: rgba(192, 132, 252, 0.2);
+  color: #d8b4fe;
+  border-color: rgba(192, 132, 252, 0.4);
+}
+.theme-dark .btn-download-nbt {
+  color: #93c5fd;
+  background: rgba(59, 130, 246, 0.15);
+  border-color: rgba(59, 130, 246, 0.35);
+}
+.theme-dark .btn-download-nbt:hover {
+  background: #3b82f6;
+  color: #fff;
+}
+
