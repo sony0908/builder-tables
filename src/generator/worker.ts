@@ -37,7 +37,11 @@ async function handle(request: WorkerRequest) {
       return
     }
 
-    const result = await generateArchive(request.structures, request.targetVersion)
+    const result = await generateArchive(
+      request.structures,
+      request.targetVersion,
+      request.packageName,
+    )
     scope.postMessage(
       {
         type: 'generated',
@@ -46,6 +50,7 @@ async function handle(request: WorkerRequest) {
         archive: result.archive,
         report: result.report,
         structures: result.structures,
+        archiveFileName: result.fileName,
       },
       [result.archive],
     )

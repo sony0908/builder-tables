@@ -36,7 +36,33 @@ addBaseBankAssets(put, putJson)
   )
 })
 
-console.log(`Generated ${Object.keys(files).length} base surveyor & bank files to inject.`)
+// Multi-pack controller functions and tags
+put(
+  'data/builder_tables/function/controller/open_catalog.mcfunction',
+  '# Abrir catálogo único o selector de paquetes\n' +
+    'scoreboard players set #installed_packs bt_pack_count 0\n' +
+    'function #builder_tables:menu/register_pack\n' +
+    'execute if score #installed_packs bt_pack_count matches 1 run function #builder_tables:menu/open_single_pack\n' +
+    'execute if score #installed_packs bt_pack_count matches 2.. run function builder_tables:controller/show_pack_selector\n' +
+    'execute if score #installed_packs bt_pack_count matches ..0 run dialog show @s builder_tables:catalogo\n',
+)
+put(
+  'data/builder_tables/function/controller/show_pack_selector.mcfunction',
+  'tellraw @s ["",{"text":"═══════════════════════════════════════","color":"gold","strikethrough":true}]\n' +
+    'tellraw @s ["",{"text":" 📦 PAQUETES DE CONSTRUCCIÓN DISPONIBLES","color":"gold","bold":true}]\n' +
+    'tellraw @s ["",{"text":" Selecciona un paquete para abrir sus planos:","color":"gray"}]\n' +
+    'function #builder_tables:menu/show_pack_entry\n' +
+    'tellraw @s ["",{"text":"═══════════════════════════════════════","color":"gold","strikethrough":true}]\n',
+)
+
+putJson('data/builder_tables/tags/function/menu/register_pack.json', { values: [] })
+putJson('data/builder_tables/tags/function/menu/open_single_pack.json', { values: [] })
+putJson('data/builder_tables/tags/function/menu/show_pack_entry.json', { values: [] })
+putJson('data/builder_tables/tags/function/menu/open_plan.json', { values: [] })
+putJson('data/builder_tables/tags/function/pack_triggers.json', { values: [] })
+putJson('data/builder_tables/tags/function/pack_recipes.json', { values: [] })
+
+console.log(`Generated ${Object.keys(files).length} base surveyor, bank & multi-pack files to inject.`)
 
 const targetZips = [
   'public/downloads/BuilderTables_26.2_controller_menu_v2.zip',
@@ -161,8 +187,45 @@ for (const zipPath of targetZips) {
           'scoreboard players reset @a[scores={bt_bank_menu=1..}] bt_bank_menu\n'
         unzipped['data/builder_tables/function/tick.mcfunction'] = strToU8(tickCode)
       }
+
+      if (!tickCode.includes('function #builder_tables:pack_triggers')) {
+        tickCode = tickCode.replace(
+          'function builder_tables:dynamic_triggers',
+          'function #builder_tables:pack_triggers\nfunction builder_tables:dynamic_triggers',
+        )
+        unzipped['data/builder_tables/function/tick.mcfunction'] = strToU8(tickCode)
+      }
     } catch (e) {
       console.error(`Error updating tick.mcfunction in ${zipPath}:`, e)
+    }
+  }
+
+  // Ensure data/builder_tables/function/init.mcfunction has bt_pack_count objective
+  if (unzipped['data/builder_tables/function/init.mcfunction']) {
+    try {
+      let initCode = new TextDecoder().decode(unzipped['data/builder_tables/function/init.mcfunction'])
+      if (!initCode.includes('scoreboard objectives add bt_pack_count dummy')) {
+        initCode += '\nscoreboard objectives add bt_pack_count dummy\n'
+        unzipped['data/builder_tables/function/init.mcfunction'] = strToU8(initCode)
+      }
+    } catch (e) {
+      console.error(`Error adding bt_pack_count in ${zipPath}:`, e)
+    }
+  }
+
+  // Ensure data/builder_tables/function/controller/open.mcfunction supports multi-pack catalog opening
+  if (unzipped['data/builder_tables/function/controller/open.mcfunction']) {
+    try {
+      let openCode = new TextDecoder().decode(unzipped['data/builder_tables/function/controller/open.mcfunction'])
+      if (!openCode.includes('function #builder_tables:menu/open_plan')) {
+        openCode = openCode.replace(
+          'execute if score @s bt_active matches 0 run dialog show @s builder_tables:catalogo',
+          'execute if score @s bt_active matches 1.. run function #builder_tables:menu/open_plan\nexecute if score @s bt_active matches 0 run function builder_tables:controller/open_catalog',
+        )
+        unzipped['data/builder_tables/function/controller/open.mcfunction'] = strToU8(openCode)
+      }
+    } catch (e) {
+      console.error(`Error updating open.mcfunction in ${zipPath}:`, e)
     }
   }
 

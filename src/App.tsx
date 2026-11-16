@@ -164,6 +164,8 @@ function App() {
   const [generationState, setGenerationState] =
     useState<GenerationState>('idle')
   const [downloadUrl, setDownloadUrl] = useState('')
+  const [packageName, setPackageName] = useState('')
+  const [generatedFileName, setGeneratedFileName] = useState('')
   const [viewerModels, setViewerModels] = useState<ViewerModel[]>([])
   const [selectedViewerKey, setSelectedViewerKey] = useState('')
   const [viewerAssetFile, setViewerAssetFile] = useState<File | null>(null)
@@ -181,6 +183,7 @@ function App() {
       downloadUrlRef.current = ''
     }
     setDownloadUrl('')
+    setGeneratedFileName('')
     setGenerationState('idle')
     setGenerationError('')
   }
@@ -253,13 +256,17 @@ function App() {
         if (downloadUrlRef.current) {
           URL.revokeObjectURL(downloadUrlRef.current)
         }
+        const filename =
+          response.archiveFileName ||
+          getVersionProfile(response.targetVersion).generatedArchive
         downloadUrlRef.current = nextUrl
         setDownloadUrl(nextUrl)
+        setGeneratedFileName(filename)
         setGenerationError('')
         setGenerationState('ready')
         downloadArchive(
           nextUrl,
-          getVersionProfile(response.targetVersion).generatedArchive,
+          filename,
         )
         return
       }
@@ -599,6 +606,7 @@ function App() {
           requestId,
           targetVersion,
           structures: inputs,
+          packageName: packageName.trim() || undefined,
         },
         inputs.map((input) => input.bytes),
       )
@@ -1185,19 +1193,89 @@ function App() {
                         ? 'Corrige o elimina las estructuras rechazadas.'
                         : generationState === 'ready'
                           ? 'El ZIP generado está listo para descargar.'
-                          : 'El ZIP contiene solo el contenido generado, no el datapack base.'}
+                          : 'El ZIP contiene solo el contenido generado, compatible con múltiples paquetes.'}
                 </p>
               </div>
             </div>
+
+            <div
+              className="generate-name-box"
+              style={{
+                margin: '14px 0 18px 0',
+                padding: '12px 14px',
+                borderRadius: '8px',
+                background: 'rgba(255, 255, 255, 0.03)',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '6px',
+              }}
+            >
+              <label
+                htmlFor="pack-name-input"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  fontWeight: 600,
+                  fontSize: '0.85rem',
+                }}
+              >
+                <span>Nombre del paquete (opcional):</span>
+                <span
+                  style={{
+                    fontSize: '0.72rem',
+                    fontWeight: 500,
+                    background: 'rgba(56, 189, 248, 0.15)',
+                    color: '#38bdf8',
+                    padding: '2px 8px',
+                    borderRadius: '999px',
+                    border: '1px solid rgba(56, 189, 248, 0.3)',
+                  }}
+                >
+                  Multipaquetes compatibles
+                </span>
+              </label>
+              <input
+                id="pack-name-input"
+                type="text"
+                value={packageName}
+                onChange={(e) => setPackageName(e.target.value)}
+                placeholder="Ej: Casas Modernas, Castillos, Granja..."
+                maxLength={40}
+                style={{
+                  padding: '9px 12px',
+                  borderRadius: '6px',
+                  border: '1px solid rgba(255, 255, 255, 0.15)',
+                  background: 'rgba(0, 0, 0, 0.25)',
+                  color: 'inherit',
+                  fontSize: '0.9rem',
+                  width: '100%',
+                  maxWidth: '380px',
+                  boxSizing: 'border-box',
+                }}
+              />
+              <p
+                style={{
+                  margin: '2px 0 0 0',
+                  fontSize: '0.76rem',
+                  opacity: 0.75,
+                  lineHeight: 1.4,
+                }}
+              >
+                Asigna un nombre único para identificar este paquete en el selector y poder combinar múltiples datapacks en el mismo mundo sin sobreescrituras.
+              </p>
+            </div>
+
             <div className="generate-actions">
               {downloadUrl ? (
                 <a
                   className="generated-download"
                   href={downloadUrl}
-                  download={versionProfile.generatedArchive}
+                  download={generatedFileName || versionProfile.generatedArchive}
                 >
                   <Download size={16} />
-                  Descargar ZIP
+                  Descargar ZIP ({generatedFileName || versionProfile.generatedArchive})
                 </a>
               ) : null}
               <button

@@ -86,6 +86,7 @@ export type GenerationResponse = {
   archive: ArrayBuffer
   report: string
   structures: StructureAnalysis[]
+  archiveFileName?: string
 }
 
 export type WorkerErrorResponse = {
@@ -110,6 +111,7 @@ export type GenerateRequest = {
   requestId: string
   targetVersion: MinecraftVersion
   structures: WorkerStructureInput[]
+  packageName?: string
 }
 
 export type WorkerRequest = AnalyzeRequest | GenerateRequest

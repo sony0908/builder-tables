@@ -1,4 +1,5 @@
 import { Int32, write } from 'nbtify'
+import { unzipSync } from 'fflate'
 import { convertSchemToVanilla } from '../src/generator/converters/schem'
 import { convertLitematicToVanilla } from '../src/generator/converters/litematic'
 import { detectNbtFormat, normalizeToVanilla } from '../src/generator/converters/index'
@@ -285,6 +286,77 @@ async function runTests() {
     throw new Error('La generación de archivo falló o produjo un ZIP vacío.')
   }
   console.log(`✅ Test 6 (Generación de paquete con .schem, .schematic y reemplazo a aire exitoso, ZIP: ${archive.archive.byteLength} bytes)`)
+
+  // ── TEST 7: Generación de multipaquetes independientes y compatibilidad modular ──
+  console.log('🧪 Ejecutando Test 7: Generación de multipaquetes independientes con nombres personalizados...')
+  const packA = await generateArchive(
+    [
+      {
+        key: 'casamoderna',
+        sourceName: 'casamodernamodernhouseflp8536422.schematic',
+        bytes: rawLegacyBytes.buffer,
+      },
+    ],
+    '26.2',
+    'Casas Modernas',
+  )
+
+  const packB = await generateArchive(
+    [
+      {
+        key: 'torremagica',
+        sourceName: 'torre_magica.schem',
+        bytes: rawSchemBytes.buffer,
+      },
+    ],
+    '26.2',
+    'Castillos Medievales',
+  )
+
+  if (packA.fileName !== 'BuilderTables_26.2_casas_modernas.zip') {
+    throw new Error(`Nombre de archivo incorrecto para packA: ${packA.fileName}`)
+  }
+  if (packB.fileName !== 'BuilderTables_26.2_castillos_medievales.zip') {
+    throw new Error(`Nombre de archivo incorrecto para packB: ${packB.fileName}`)
+  }
+
+  const unzippedA = unzipSync(new Uint8Array(packA.archive))
+  const unzippedB = unzipSync(new Uint8Array(packB.archive))
+
+  // Verificar catálogos individuales
+  if (!unzippedA['data/builder_tables/dialog/catalogo_casas_modernas.json']) {
+    throw new Error('Falta catalogo_casas_modernas.json en packA')
+  }
+  if (!unzippedB['data/builder_tables/dialog/catalogo_castillos_medievales.json']) {
+    throw new Error('Falta catalogo_castillos_medievales.json en packB')
+  }
+
+  // Verificar hooks de registro y tags
+  if (!unzippedA['data/builder_tables/tags/function/menu/register_pack.json']) {
+    throw new Error('Falta tag menu/register_pack.json en packA')
+  }
+  if (!unzippedB['data/builder_tables/tags/function/menu/register_pack.json']) {
+    throw new Error('Falta tag menu/register_pack.json en packB')
+  }
+
+  const tagRegA = JSON.parse(new TextDecoder().decode(unzippedA['data/builder_tables/tags/function/menu/register_pack.json']))
+  const tagRegB = JSON.parse(new TextDecoder().decode(unzippedB['data/builder_tables/tags/function/menu/register_pack.json']))
+  if (!tagRegA.values.includes('builder_tables:pack_casas_modernas/menu/register')) {
+    throw new Error('Tag register_pack de packA no contiene builder_tables:pack_casas_modernas/menu/register')
+  }
+  if (!tagRegB.values.includes('builder_tables:pack_castillos_medievales/menu/register')) {
+    throw new Error('Tag register_pack de packB no contiene builder_tables:pack_castillos_medievales/menu/register')
+  }
+
+  // Verificar triggers modulares por paquete
+  if (!unzippedA['data/builder_tables/tags/function/pack_triggers.json']) {
+    throw new Error('Falta tag pack_triggers.json en packA')
+  }
+  if (!unzippedB['data/builder_tables/tags/function/pack_triggers.json']) {
+    throw new Error('Falta tag pack_triggers.json en packB')
+  }
+
+  console.log(`✅ Test 7 (Multipaquetes independientes verificados exitosamente: "${packA.fileName}" y "${packB.fileName}")`)
 
   console.log('🎉 Todos los tests de conversores pasaron satisfactoriamente.')
 }

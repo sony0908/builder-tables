@@ -11,6 +11,19 @@ const PLAN_OWNER_MATCH_TAG = 'bt_plan_owner_match'
 const PLAN_OWNER_ONLINE_TAG = 'bt_plan_owner_online'
 const NEW_PLAN_ANCHOR_TAG = 'bt_new_plan_anchor'
 
+export type PackMeta = {
+  id: string
+  name: string
+}
+
+export function structurePlanId(id: string): number {
+  let hash = 5381
+  for (let i = 0; i < id.length; i++) {
+    hash = ((hash << 5) + hash + id.charCodeAt(i)) | 0
+  }
+  return (Math.abs(hash) % 1999999000) + 1
+}
+
 function mcfunction(lines: string[]) {
   return lines.join('\n') + '\n'
 }
@@ -74,21 +87,23 @@ function controllerItemSnbt() {
 function addDialogs(
   putJson: JsonFileWriter,
   structures: GeneratedStructure[],
+  packMeta: PackMeta = { id: 'default', name: 'Planos de construccion' },
 ) {
-  putJson('data/builder_tables/dialog/catalogo.json', {
+  const catalogDialog = {
     type: 'minecraft:multi_action',
-    title: { text: 'Planos de construccion' },
+    title: { text: packMeta.name },
     body: {
       type: 'minecraft:plain_message',
       contents: { text: 'Selecciona una construccion.' },
     },
     columns: 2,
-    actions: structures.map((structure, index) =>
-      action(
+    actions: structures.map((structure) => {
+      const plan = structurePlanId(structure.analysis.id)
+      return action(
         structure.analysis.name,
-        'trigger bt_select set ' + (index + 1),
-      ),
-    ).map((entry, index) => ({
+        'trigger bt_select set ' + plan,
+      )
+    }).map((entry, index) => ({
       ...entry,
       tooltip: {
         text:
@@ -101,10 +116,13 @@ function addDialogs(
       },
     })),
     exit_action: { label: { text: 'Salir' } },
-  })
+  }
 
-  structures.forEach((structure, index) => {
-    const plan = index + 1
+  putJson('data/builder_tables/dialog/catalogo_' + packMeta.id + '.json', catalogDialog)
+  putJson('data/builder_tables/dialog/catalogo.json', catalogDialog)
+
+  structures.forEach((structure) => {
+    const plan = structurePlanId(structure.analysis.id)
     const { analysis } = structure
 
     putJson('data/builder_tables/dialog/plan_' + analysis.id + '.json', {
@@ -340,6 +358,7 @@ const BANK_TRIGGER_OBJECTIVES = [
           ),
         )
         .concat([
+          'scoreboard objectives add bt_pack_count dummy',
           'scoreboard players set #ten bt_interest_math 10',
           'scoreboard players set #hundred bt_interest_math 100',
           'scoreboard players set #tier1_limit bt_interest_math 25000',
@@ -390,9 +409,9 @@ const BANK_TRIGGER_OBJECTIVES = [
         'function builder_tables_generated:controller_block/owner/check_plan',
         'execute unless entity ' + ownedAnchor + ' run return 0',
       ].concat(structures.map(
-        (structure, index) =>
+        (structure) =>
           'execute if score @s bt_active matches ' +
-          (index + 1) +
+          structurePlanId(structure.analysis.id) +
           ' if entity ' +
           ownedAnchor +
           ' at ' +
@@ -511,10 +530,93 @@ const BANK_TRIGGER_OBJECTIVES = [
   })
 }
 
+function addPackMenuHooks(
+  put: TextFileWriter,
+  putJson: JsonFileWriter,
+  structures: GeneratedStructure[],
+  packMeta: PackMeta,
+) {
+  const packRoot = 'data/builder_tables/function/pack_' + packMeta.id + '/menu/'
+
+  // 1. Registro de presencia del paquete
+  put(
+    packRoot + 'register.mcfunction',
+    '# Registrar presencia del paquete ' + packMeta.name + '\n' +
+      'scoreboard players add #installed_packs bt_pack_count 1\n',
+  )
+
+  // 2. Abrir si es el único paquete instalado
+  put(
+    packRoot + 'open_if_only.mcfunction',
+    '# Si este es el unico paquete instalado, abrir su catalogo directamente\n' +
+      'execute if score #installed_packs bt_pack_count matches 1 run dialog show @s builder_tables:catalogo_' +
+      packMeta.id +
+      '\n',
+  )
+
+  // 3. Entrada en el chat para el selector de paquetes
+  const countText = structures.length + (structures.length === 1 ? ' construccion' : ' construcciones')
+  const chatEntry = JSON.stringify([
+    '',
+    { text: '  ▶ ', color: 'gold' },
+    { text: '[Pack: ', color: 'yellow' },
+    { text: packMeta.name, color: 'aqua', bold: true },
+    { text: '] ', color: 'yellow' },
+    { text: '(' + countText + ') ', color: 'gray' },
+    {
+      text: '[Abrir Catalogo]',
+      color: 'green',
+      bold: true,
+      clickEvent: {
+        action: 'run_command',
+        value: '/dialog show @s builder_tables:catalogo_' + packMeta.id,
+      },
+      hoverEvent: {
+        action: 'show_text',
+        value: 'Haz clic para abrir el catalogo de ' + packMeta.name,
+      },
+    },
+  ])
+
+  put(
+    packRoot + 'show_entry.mcfunction',
+    '# Mostrar entrada interactiva en el selector de paquetes\n' +
+      'tellraw @s ' + chatEntry + '\n',
+  )
+
+  // 4. Abrir plano activo si pertenece a este paquete
+  const openPlanLines = [
+    '# Abrir plano activo si pertenece a este paquete',
+    ...structures.map(
+      (structure) =>
+        'execute if score @s bt_active matches ' +
+        structurePlanId(structure.analysis.id) +
+        ' run dialog show @s builder_tables:plan_' +
+        structure.analysis.id,
+    ),
+  ]
+  put(packRoot + 'open_plan.mcfunction', mcfunction(openPlanLines))
+
+  // Etiquetas de funcion unificadas de Minecraft
+  putJson('data/builder_tables/tags/function/menu/register_pack.json', {
+    values: ['builder_tables:pack_' + packMeta.id + '/menu/register'],
+  })
+  putJson('data/builder_tables/tags/function/menu/open_single_pack.json', {
+    values: ['builder_tables:pack_' + packMeta.id + '/menu/open_if_only'],
+  })
+  putJson('data/builder_tables/tags/function/menu/show_pack_entry.json', {
+    values: ['builder_tables:pack_' + packMeta.id + '/menu/show_entry'],
+  })
+  putJson('data/builder_tables/tags/function/menu/open_plan.json', {
+    values: ['builder_tables:pack_' + packMeta.id + '/menu/open_plan'],
+  })
+}
+
 export function addControllerAssets(
   put: TextFileWriter,
   putJson: JsonFileWriter,
   structures: GeneratedStructure[],
+  packMeta: PackMeta = { id: 'default', name: 'Planos de construccion' },
 ) {
   putJson('data/builder_tables/recipe/planning_block.json', {
     type: 'minecraft:crafting_shapeless',
@@ -526,8 +628,9 @@ export function addControllerAssets(
       components: controllerComponents(),
     },
   })
-  addDialogs(putJson, structures)
+  addDialogs(putJson, structures, packMeta)
   addControllerBlock(put, putJson, structures)
+  addPackMenuHooks(put, putJson, structures, packMeta)
   put(
     'data/builder_tables/function/give_controller.mcfunction',
     '# Bloque-controlador sólido para Builder Tables.\ngive @s ' +

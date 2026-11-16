@@ -9,10 +9,11 @@ import { SURVIVAL_POLICY_METADATA } from './survival-policy'
 import type { StructureAnalysis, WorkerStructureInput } from './types'
 import { getVersionProfile, type MinecraftVersion } from './version-profiles'
 
-type GeneratedArchive = {
+export type GeneratedArchive = {
   archive: ArrayBuffer
   report: string
   structures: StructureAnalysis[]
+  fileName?: string
 }
 
 function json(value: unknown) {
@@ -22,6 +23,7 @@ function json(value: unknown) {
 export async function generateArchive(
   inputs: WorkerStructureInput[],
   targetVersion: MinecraftVersion = '26.2',
+  packageName?: string,
 ): Promise<GeneratedArchive> {
   if (!inputs.length) {
     throw new Error('Añade al menos una estructura antes de generar.')
@@ -93,8 +95,18 @@ export async function generateArchive(
     })),
   })
 
-  addControllerAssets(put, putJson, structures)
-  addDynamicAssets(put, structures)
+  const rawName = (packageName || '').trim()
+  const randomSuffix = Math.random().toString(36).substring(2, 7)
+  const slug = rawName
+    ? rawName.toLowerCase().replace(/[^a-z0-9_]/g, '_').replace(/_+/g, '_').replace(/^_+|_+$/g, '')
+    : `pack_${randomSuffix}`
+  const packId = slug || `pack_${randomSuffix}`
+  const packName = rawName || `Paquete ${structures.length} Planos`
+  const packMeta = { id: packId, name: packName }
+  const fileName = `BuilderTables_${profile.id}_${packId}.zip`
+
+  addControllerAssets(put, putJson, structures, packMeta)
+  addDynamicAssets(put, structures, putJson, packMeta.id)
   addPreviewFiles(put, structures)
   addBankAssets(put, putJson, structures)
   addSurveyorAssets(put, putJson)
@@ -163,5 +175,6 @@ export async function generateArchive(
     archive: archive.buffer,
     report,
     structures: structures.map((structure) => structure.analysis),
+    fileName,
   }
 }

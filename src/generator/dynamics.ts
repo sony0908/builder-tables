@@ -2,6 +2,7 @@ import { rotatedFillBounds, splitStructureRegions, type Rotation } from './geome
 import type { GeneratedStructure } from './nbt'
 import type { TextFileWriter } from './preview'
 import { BANK_CARD_CUSTOM_DATA, BANK_CARD_ITEM } from './bank'
+import { structurePlanId, type JsonFileWriter } from './controller'
 
 const CONTROLLER_BLOCK = 'minecraft:note_block'
 const CONFIRM_OBJECTIVES = ['bt_confirm1', 'bt_confirm2']
@@ -434,14 +435,21 @@ function addPaymentMacroFiles(put: TextFileWriter) {
     mcfunction(['$give @s minecraft:emerald $(change)']),
   )
 }
-function addDynamicFiles(put: TextFileWriter, structures: GeneratedStructure[]) {
+function addDynamicFiles(
+  put: TextFileWriter,
+  structures: GeneratedStructure[],
+  putJson?: JsonFileWriter,
+  packId: string = 'default',
+) {
   const triggers: string[] = []
   const recipes: string[] = []
+  const packTriggers: string[] = []
+  const packRecipes: string[] = []
 
   addPaymentMacroFiles(put)
 
-  structures.forEach((structure, index) => {
-    const plan = index + 1
+  structures.forEach((structure) => {
+    const plan = structurePlanId(structure.analysis.id)
     const { analysis } = structure
 
     put(
@@ -491,6 +499,29 @@ function addDynamicFiles(put: TextFileWriter, structures: GeneratedStructure[]) 
       confirmTwo(structure, plan),
     )
 
+    packTriggers.push(
+      'execute as @a[scores={bt_select=' +
+        plan +
+        '}] run function builder_tables:dynamic/select_' +
+        analysis.id,
+      'execute as @a[scores={bt_confirm1=' +
+        plan +
+        '}] run function builder_tables:dynamic/confirm_1_' +
+        analysis.id,
+      'execute as @a[scores={bt_confirm2=' +
+        plan +
+        '}] run function builder_tables:dynamic/confirm_2_' +
+        analysis.id,
+      'execute as @a[scores={bt_trigger=' +
+        plan +
+        '}] run function builder_tables:dynamic/pay_' +
+        analysis.id,
+      'execute as @a[scores={bt_undo=' +
+        plan +
+        '}] run function builder_tables:dynamic/undo_' +
+        analysis.id,
+    )
+
     triggers.push(
       'execute as @a[scores={bt_trigger=' +
         plan +
@@ -520,6 +551,14 @@ function addDynamicFiles(put: TextFileWriter, structures: GeneratedStructure[]) 
       '}]}'
     )
 
+    packRecipes.push(
+      'execute if score @s bt_book matches ' +
+        plan +
+        ' run give @s minecraft:written_book[' +
+        book +
+        ']',
+    )
+
     recipes.push(
       'execute if score @s bt_book matches ' +
         plan +
@@ -530,17 +569,42 @@ function addDynamicFiles(put: TextFileWriter, structures: GeneratedStructure[]) 
   })
 
   put(
+    'data/builder_tables/function/pack_' + packId + '/triggers.mcfunction',
+    mcfunction(packTriggers),
+  )
+  put(
+    'data/builder_tables/function/pack_' + packId + '/recipes.mcfunction',
+    mcfunction(packRecipes),
+  )
+
+  if (putJson) {
+    putJson('data/builder_tables/tags/function/pack_triggers.json', {
+      values: ['builder_tables:pack_' + packId + '/triggers'],
+    })
+    putJson('data/builder_tables/tags/function/pack_recipes.json', {
+      values: ['builder_tables:pack_' + packId + '/recipes'],
+    })
+  }
+
+  put(
     'data/builder_tables/function/dynamic_triggers.mcfunction',
     mcfunction(
-      triggers.concat([
+      [
+        '# Dynamic triggers',
+        'function #builder_tables:pack_triggers',
+        ...triggers,
         'scoreboard players reset @a[scores={bt_trigger=1..}] bt_trigger',
         'scoreboard players reset @a[scores={bt_undo=1..}] bt_undo',
-      ]),
+      ],
     ),
   )
   put(
     'data/builder_tables/function/give_recipe.mcfunction',
-    mcfunction(recipes),
+    mcfunction([
+      '# Recipes',
+      'function #builder_tables:pack_recipes',
+      ...recipes,
+    ]),
   )
 }
 
@@ -553,20 +617,16 @@ function addControllerFunctions(
       'Coloca un Bloque de Planificación y haz clic en él.',
       'Este Bloque de Planificación pertenece a otro jugador.',
     ),
-    'execute if score @s bt_active matches 0 run dialog show @s builder_tables:catalogo',
-  ]
-
-  structures.forEach((structure, index) => {
-    const plan = index + 1
-    const id = structure.analysis.id
-
-    opens.push(
-      'execute if score @s bt_active matches ' +
-        plan +
+    'execute if score @s bt_active matches 1.. run function #builder_tables:menu/open_plan',
+    ...structures.map(
+      (structure) =>
+        'execute if score @s bt_active matches ' +
+        structurePlanId(structure.analysis.id) +
         ' run dialog show @s builder_tables:plan_' +
-        id,
-    )
-  })
+        structure.analysis.id,
+    ),
+    'execute if score @s bt_active matches 0 run function builder_tables:controller/open_catalog',
+  ]
 
   const tick = [
     'function builder_tables_generated:controller_block/validate',
@@ -586,26 +646,27 @@ function addControllerFunctions(
     tick.push('scoreboard players enable @a ' + objective)
   })
   tick.push(
+    'function #builder_tables:pack_triggers',
     ...structures.map(
-      (structure, index) =>
+      (structure) =>
         'execute as @a[scores={bt_select=' +
-        (index + 1) +
+        structurePlanId(structure.analysis.id) +
         '}] run function builder_tables:dynamic/select_' +
         structure.analysis.id,
     ),
     'scoreboard players reset @a[scores={bt_select=1..}] bt_select',
     ...structures.map(
-      (structure, index) =>
+      (structure) =>
         'execute as @a[scores={bt_confirm1=' +
-        (index + 1) +
+        structurePlanId(structure.analysis.id) +
         '}] run function builder_tables:dynamic/confirm_1_' +
         structure.analysis.id,
     ),
     'scoreboard players reset @a[scores={bt_confirm1=1..}] bt_confirm1',
     ...structures.map(
-      (structure, index) =>
+      (structure) =>
         'execute as @a[scores={bt_confirm2=' +
-        (index + 1) +
+        structurePlanId(structure.analysis.id) +
         '}] run function builder_tables:dynamic/confirm_2_' +
         structure.analysis.id,
     ),
@@ -649,6 +710,26 @@ function addControllerFunctions(
     mcfunction(opens),
   )
   put(
+    'data/builder_tables/function/controller/open_catalog.mcfunction',
+    mcfunction([
+      'scoreboard players set #installed_packs bt_pack_count 0',
+      'function #builder_tables:menu/register_pack',
+      'execute if score #installed_packs bt_pack_count matches 1 run function #builder_tables:menu/open_single_pack',
+      'execute if score #installed_packs bt_pack_count matches 2.. run function builder_tables:controller/show_pack_selector',
+      'execute if score #installed_packs bt_pack_count matches ..0 run dialog show @s builder_tables:catalogo',
+    ]),
+  )
+  put(
+    'data/builder_tables/function/controller/show_pack_selector.mcfunction',
+    mcfunction([
+      'tellraw @s ["",{"text":"═══════════════════════════════════════","color":"gold","strikethrough":true}]',
+      'tellraw @s ["",{"text":" 📦 PAQUETES DE CONSTRUCCIÓN DISPONIBLES","color":"gold","bold":true}]',
+      'tellraw @s ["",{"text":" Selecciona un paquete para abrir sus planos:","color":"gray"}]',
+      'function #builder_tables:menu/show_pack_entry',
+      'tellraw @s ["",{"text":"═══════════════════════════════════════","color":"gold","strikethrough":true}]',
+    ]),
+  )
+  put(
     'data/builder_tables/function/controller/exit.mcfunction',
     mcfunction([
       ...planOwnerGuard(
@@ -689,7 +770,9 @@ function addControllerFunctions(
 export function addDynamicAssets(
   put: TextFileWriter,
   structures: GeneratedStructure[],
+  putJson?: JsonFileWriter,
+  packId: string = 'default',
 ) {
-  addDynamicFiles(put, structures)
+  addDynamicFiles(put, structures, putJson, packId)
   addControllerFunctions(put, structures)
 }
