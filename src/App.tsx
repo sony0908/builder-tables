@@ -198,6 +198,8 @@ function App() {
     setRevision((current) => current + 1)
   }
 
+  structuresRef.current = structures
+
   useEffect(() => {
     structuresRef.current = structures
   }, [structures])
@@ -316,14 +318,14 @@ function App() {
   }, [])
 
   useEffect(() => {
-    const snapshot = structuresRef.current
-    if (!snapshot.length || !workerRef.current) return
-
     const requestId = 'analysis-' + crypto.randomUUID()
     let cancelled = false
     analysisRequestRef.current = requestId
 
     const timer = window.setTimeout(() => {
+      const snapshot = structuresRef.current
+      if (!snapshot.length || !workerRef.current) return
+
       void (async () => {
         try {
           const inputs = await buildWorkerInputs(snapshot)
@@ -558,30 +560,34 @@ function App() {
     structureId: string,
     replacements: Record<string, string>,
   ) => {
-    setStructures((current) =>
-      current.map((s) => {
+    setStructures((current) => {
+      const next = current.map((s) => {
         if (s.id === structureId) {
           saveReplacements(s.file.name, replacements)
           return { ...s, replacements }
         }
         return s
-      }),
-    )
+      })
+      structuresRef.current = next
+      return next
+    })
     clearGeneratedDownload()
     setRevision((c) => c + 1)
   }
 
   const applyReplacementsToAll = (replacements: Record<string, string>) => {
-    setStructures((current) =>
-      current.map((s) => {
+    setStructures((current) => {
+      const next = current.map((s) => {
         const merged = { ...s.replacements, ...replacements }
         saveReplacements(s.file.name, merged)
         return {
           ...s,
           replacements: merged,
         }
-      }),
-    )
+      })
+      structuresRef.current = next
+      return next
+    })
     clearGeneratedDownload()
     setRevision((c) => c + 1)
   }
@@ -938,6 +944,11 @@ function App() {
                 }
               >
                 <StructureViewer
+                  key={
+                    selectedViewer
+                      ? `${selectedViewer.key}-${selectedViewer.states.length}-${selectedViewer.palette.map((p) => p.name).join(',')}`
+                      : 'empty'
+                  }
                   model={selectedViewer}
                   theme={theme}
                   assetFile={viewerAssetFile}

@@ -522,30 +522,145 @@ function blockPosition(block: NbtRecord, size: [number, number, number]) {
   return values as [number, number, number]
 }
 
-function blockColor(name: string) {
-  if (name.includes('water') || name.includes('ice')) return '#4f9bdd'
-  if (name.includes('lava') || name.includes('magma')) return '#e06a39'
-  if (name.includes('glass')) return '#79b7c9'
-  if (name.includes('leaves') || name.includes('moss')) return '#518a50'
-  if (name.includes('grass') || name.includes('fern')) return '#6a9c50'
+function areCompatibleBlockFamilies(fromName: string, toName: string): boolean {
+  if (fromName === toName) return true
+  const families = [
+    '_stairs',
+    '_slab',
+    '_wall',
+    '_fence_gate',
+    '_fence',
+    '_trapdoor',
+    '_door',
+    '_button',
+    '_pressure_plate',
+    '_log',
+    '_wood',
+    '_pane',
+    '_bed',
+    '_candle',
+    '_banner',
+    '_sign',
+    '_hanging_sign',
+  ]
+  for (const suffix of families) {
+    if (fromName.endsWith(suffix) && toName.endsWith(suffix)) {
+      return true
+    }
+  }
+  return false
+}
+
+function blockColor(name: string): string {
+  const clean = name.replace(/^minecraft:/, '').toLowerCase()
+
+  // Colores directos por prefijo de tinte (hormigón, lana, terracota, cristal teñido, etc.)
+  if (clean.includes('white_')) return '#e9ecef'
+  if (clean.includes('light_gray_')) return '#9aa0a6'
+  if (clean.includes('gray_')) return '#495057'
+  if (clean.includes('black_')) return '#1e2022'
+  if (clean.includes('brown_')) return '#6c4a35'
+  if (clean.includes('red_')) return '#dc3545'
+  if (clean.includes('orange_')) return '#fd7e14'
+  if (clean.includes('yellow_')) return '#ffc107'
+  if (clean.includes('lime_')) return '#70b82c'
+  if (clean.includes('green_')) return '#198754'
+  if (clean.includes('cyan_')) return '#0dcaf0'
+  if (clean.includes('light_blue_')) return '#6ea8fe'
+  if (clean.includes('blue_')) return '#0d6efd'
+  if (clean.includes('purple_')) return '#6f42c1'
+  if (clean.includes('magenta_')) return '#d63384'
+  if (clean.includes('pink_')) return '#f783ac'
+
+  // Maderas diferenciadas
+  if (clean.includes('dark_oak')) return '#422a14'
+  if (clean.includes('spruce')) return '#65492d'
+  if (clean.includes('oak')) return '#b8945f'
+  if (clean.includes('birch')) return '#d7cb8d'
+  if (clean.includes('jungle')) return '#ab7956'
+  if (clean.includes('acacia')) return '#ba6336'
+  if (clean.includes('mangrove')) return '#743636'
+  if (clean.includes('cherry')) return '#e8b3b7'
+  if (clean.includes('bamboo')) return '#cdb55a'
+  if (clean.includes('crimson')) return '#7e3955'
+  if (clean.includes('warped')) return '#2b6963'
   if (
-    name.includes('log') ||
-    name.includes('wood') ||
-    name.includes('planks') ||
-    name.includes('fence')
+    clean.includes('log') ||
+    clean.includes('wood') ||
+    clean.includes('planks') ||
+    clean.includes('fence')
   ) {
     return '#8a6140'
   }
-  if (name.includes('sand') || name.includes('end_stone')) return '#c9b578'
-  if (name.includes('dirt') || name.includes('terracotta')) return '#a56e55'
+
+  // Minerales, gemas y metales preciosos
+  if (clean.includes('diamond')) return '#4cedf0'
+  if (clean.includes('gold')) return '#f5cb39'
+  if (clean.includes('emerald')) return '#1ad861'
+  if (clean.includes('iron')) return '#dcdcdc'
+  if (clean.includes('netherite')) return '#3b3437'
+  if (clean.includes('redstone')) return '#b81515'
+  if (clean.includes('lapis')) return '#1b4e9b'
+  if (clean.includes('copper')) return '#c06c50'
+  if (clean.includes('amethyst')) return '#845cb4'
+  if (clean.includes('quartz')) return '#ece5dc'
+  if (clean.includes('coal') || clean.includes('charcoal')) return '#222222'
+  if (clean.includes('obsidian')) return '#1a1325'
+
+  // Piedras y mampostería detallada
+  if (clean.includes('deepslate_tile')) return '#2c2c33'
+  if (clean.includes('deepslate_brick')) return '#33333a'
+  if (clean.includes('cobbled_deepslate')) return '#3a3a42'
+  if (clean.includes('deepslate')) return '#46464f'
+  if (clean.includes('blackstone')) return '#2a272e'
+  if (clean.includes('basalt')) return '#4f4b52'
+  if (clean.includes('smooth_stone')) return '#9e9e9e'
+  if (clean.includes('stone_brick')) return '#787878'
+  if (clean.includes('mossy_cobblestone') || clean.includes('mossy_stone')) return '#687860'
+  if (clean.includes('cobblestone')) return '#686868'
+  if (clean.includes('andesite')) return '#858585'
+  if (clean.includes('diorite')) return '#cbcbcb'
+  if (clean.includes('granite')) return '#986754'
+  if (clean.includes('tuff')) return '#6c6d66'
+  if (clean.includes('calcite')) return '#dfdeda'
+  if (clean.includes('dripstone')) return '#83685a'
+  if (clean.includes('red_sandstone')) return '#b85f26'
+  if (clean.includes('sandstone')) return '#d9c894'
+  if (clean.includes('mud_brick') || clean.includes('mud')) return '#866851'
+  if (clean.includes('nether_brick')) return '#30191d'
+  if (clean.includes('brick')) return '#965343'
+  if (clean.includes('end_stone')) return '#dcdb9f'
+  if (clean.includes('purpur')) return '#a878a8'
+  if (clean.includes('prismarine_brick')) return '#5a948e'
+  if (clean.includes('dark_prismarine')) return '#335b54'
+  if (clean.includes('prismarine')) return '#5f9a94'
+  if (clean.includes('stone') || clean.includes('rock')) return '#828282'
+
+  // Luces
+  if (clean.includes('sea_lantern')) return '#bce2d5'
+  if (clean.includes('glowstone')) return '#f3c473'
+  if (clean.includes('shroomlight')) return '#f2854b'
+  if (clean.includes('lantern') || clean.includes('torch')) return '#ffd15c'
+
+  // Líquidos y naturaleza
+  if (clean.includes('water') || clean.includes('ice')) return '#3f76e4'
+  if (clean.includes('lava') || clean.includes('magma')) return '#d95822'
+  if (clean.includes('glass')) return '#a4d2e8'
+  if (clean.includes('leaves')) return '#487e35'
+  if (clean.includes('moss')) return '#546e28'
+  if (clean.includes('grass') || clean.includes('fern')) return '#5b8e32'
   if (
-    name.includes('stone') ||
-    name.includes('deepslate') ||
-    name.includes('brick') ||
-    name.includes('concrete')
+    clean.includes('dirt') ||
+    clean.includes('podzol') ||
+    clean.includes('coarse_dirt')
   ) {
-    return '#7b8391'
+    return '#866043'
   }
+  if (clean.includes('sand')) return '#dbcb96'
+  if (clean.includes('gravel')) return '#807c7a'
+  if (clean.includes('clay')) return '#9da4b3'
+  if (clean.includes('snow')) return '#f0f3f6'
+  if (clean.includes('terracotta')) return '#9c5b43'
 
   let hash = 0
   for (let index = 0; index < name.length; index += 1) {
@@ -616,9 +731,17 @@ async function processInput(
       replacements[state.name] &&
       VANILLA_BLOCK_IDS.has(replacements[state.name])
     ) {
+      const targetName = replacements[state.name]
+      if (targetName === 'minecraft:air') {
+        return {
+          name: targetName,
+          properties: [],
+        }
+      }
+      const compatible = areCompatibleBlockFamilies(state.name, targetName)
       return {
-        ...state,
-        name: replacements[state.name],
+        name: targetName,
+        properties: compatible ? state.properties : [],
       }
     }
     return state
@@ -647,6 +770,9 @@ async function processInput(
       const entryToPush = { ...rawPaletteEntry }
       if (entryToPush.Name !== state.name) {
         entryToPush.Name = state.name
+        if (!areCompatibleBlockFamilies(rawStates[index].name, state.name) || state.name === 'minecraft:air') {
+          delete entryToPush.Properties
+        }
       }
       palette.push(entryToPush)
     }
