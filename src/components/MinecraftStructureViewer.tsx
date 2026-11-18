@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   ACESFilmicToneMapping,
   AmbientLight,
@@ -14,13 +14,22 @@ import {
   MeshStandardMaterial,
   PCFSoftShadowMap,
   PerspectiveCamera,
+  Plane,
   Scene,
   SRGBColorSpace,
   Vector3,
   WebGLRenderer,
 } from 'three'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
-import { ChevronDown, Maximize2, RotateCcw, SunMedium } from 'lucide-react'
+import {
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  Layers,
+  Maximize2,
+  RotateCcw,
+  SunMedium,
+} from 'lucide-react'
 import type { ViewerModel } from '../generator/types'
 import type { MinecraftVersion } from '../generator/version-profiles'
 import {
@@ -41,6 +50,8 @@ type StructureViewerProps = {
 type ViewPreset = 'isometric' | 'top' | 'front' | 'right'
 
 export type LightingMode = 'clear' | 'shadows'
+
+export type SlicingMode = 'all' | 'cumulative' | 'single'
 
 type ViewerController = {
   reset: () => void
@@ -128,6 +139,87 @@ export function MinecraftStructureViewer({
   brightnessRef.current = brightness
   const updateLightingRef = useRef<((level: number) => void) | null>(null)
 
+  const { minY, totalLayers, layerStats } = useMemo(() => {
+    if (!model.states.length || model.positions.length !== model.states.length * 3) {
+      return { minY: 0, maxY: 0, totalLayers: 1, layerStats: { counts: [0], cumulative: [0] } }
+    }
+
+    let min = Infinity
+    let max = -Infinity
+    const totalBlocks = model.states.length
+
+    for (let i = 0; i < totalBlocks; i++) {
+      const y = model.positions[i * 3 + 1]
+      if (y < min) min = y
+      if (y > max) max = y
+    }
+
+    if (min === Infinity) {
+      return { minY: 0, maxY: 0, totalLayers: 1, layerStats: { counts: [0], cumulative: [0] } }
+    }
+
+    const roundedMin = Math.round(min)
+    const roundedMax = Math.round(max)
+    const layersCount = Math.max(1, roundedMax - roundedMin + 1)
+    const counts = new Array<number>(layersCount).fill(0)
+
+    for (let i = 0; i < totalBlocks; i++) {
+      const y = Math.round(model.positions[i * 3 + 1])
+      const layerIdx = y - roundedMin
+      if (layerIdx >= 0 && layerIdx < layersCount) {
+        counts[layerIdx]++
+      }
+    }
+
+    const cumulative = new Array<number>(layersCount).fill(0)
+    let sum = 0
+    for (let i = 0; i < layersCount; i++) {
+      sum += counts[i]
+      cumulative[i] = sum
+    }
+
+    return {
+      minY: roundedMin,
+      maxY: roundedMax,
+      totalLayers: layersCount,
+      layerStats: { counts, cumulative },
+    }
+  }, [model])
+
+  const [sliceMode, setSliceMode] = useState<SlicingMode>('all')
+  const [selectedLayer, setSelectedLayer] = useState<number>(totalLayers)
+  const [showLayerPanel, setShowLayerPanel] = useState(false)
+
+  const sliceModeRef = useRef(sliceMode)
+  sliceModeRef.current = sliceMode
+  const selectedLayerRef = useRef(selectedLayer)
+  selectedLayerRef.current = selectedLayer
+  const updateClippingRef = useRef<((mode: SlicingMode, layer: number) => void) | null>(null)
+
+  useEffect(() => {
+    setSelectedLayer(totalLayers)
+  }, [totalLayers])
+
+  useEffect(() => {
+    updateClippingRef.current?.(sliceMode, selectedLayer)
+  }, [sliceMode, selectedLayer])
+
+  useEffect(() => {
+    if (!showLayerPanel) return
+    const handleClickOutside = (e: PointerEvent) => {
+      const target = e.target as HTMLElement
+      if (
+        !target.closest('.minecraft-viewer-layer-wrapper') &&
+        !target.closest('.minecraft-viewer-layer-popover') &&
+        !target.closest('.minecraft-viewer-compact-layer-bar')
+      ) {
+        setShowLayerPanel(false)
+      }
+    }
+    document.addEventListener('pointerdown', handleClickOutside)
+    return () => document.removeEventListener('pointerdown', handleClickOutside)
+  }, [showLayerPanel])
+
   useEffect(() => {
     localStorage.setItem('builder-tables-viewer-brightness', String(brightness))
     updateLightingRef.current?.(brightness)
@@ -205,6 +297,7 @@ export function MinecraftStructureViewer({
     renderer.toneMappingExposure = theme === 'dark' ? 1.38 : 1.3
     renderer.shadowMap.enabled = true
     renderer.shadowMap.type = PCFSoftShadowMap
+    renderer.localClippingEnabled = true
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5))
 
     const scene = new Scene()
@@ -264,12 +357,24 @@ export function MinecraftStructureViewer({
     grid.position.set(center.x, fallbackBounds.min.y - 0.51, center.z)
     scene.add(grid)
 
+    // Cuadrícula dinámica del plano de corte / escáner
+    const sliceGrid = new GridHelper(
+      gridSize,
+      Math.min(128, Math.max(Math.round(gridSize), 4)),
+      theme === 'dark' ? '#06b6d4' : '#0284c7',
+      theme === 'dark' ? '#164e63' : '#bae6fd',
+    )
+    sliceGrid.position.set(center.x, fallbackBounds.min.y, center.z)
+    sliceGrid.visible = false
+    scene.add(sliceGrid)
+
     const geometry = new BoxGeometry(0.96, 0.96, 0.96)
     const material = new MeshStandardMaterial({
       vertexColors: true,
       roughness: 0.82,
       metalness: 0.03,
     })
+    material.clipShadows = true
     const fallbackMesh = new InstancedMesh(geometry, material, model.states.length)
     fallbackMesh.count = 0
     fallbackMesh.castShadow = true
@@ -388,8 +493,76 @@ export function MinecraftStructureViewer({
       requestRender()
     }
 
+    let prevPlanesCount = -1
+
+    const applyClipping = (mode: SlicingMode, layer: number) => {
+      if (disposed) return
+
+      let planes: Plane[] = []
+
+      if (mode !== 'all' && totalLayers > 0) {
+        const clampedLayer = Math.max(1, Math.min(layer, totalLayers))
+        const yBottom = activeBounds.min.y + (clampedLayer - 1) - 0.005
+        const yTop = activeBounds.min.y + clampedLayer + 0.005
+
+        if (mode === 'cumulative') {
+          planes = [new Plane(new Vector3(0, -1, 0), yTop)]
+          sliceGrid.position.set(center.x, yTop - 0.005, center.z)
+          sliceGrid.visible = true
+        } else if (mode === 'single') {
+          planes = [
+            new Plane(new Vector3(0, -1, 0), yTop),
+            new Plane(new Vector3(0, 1, 0), -yBottom),
+          ]
+          sliceGrid.position.set(center.x, yBottom + 0.005, center.z)
+          sliceGrid.visible = true
+        }
+      } else {
+        sliceGrid.visible = false
+      }
+
+      const countChanged = planes.length !== prevPlanesCount
+      prevPlanesCount = planes.length
+
+      renderer.clippingPlanes = planes
+
+      if (fallbackMesh.material) {
+        const mat = fallbackMesh.material as MeshStandardMaterial
+        mat.clipShadows = true
+        mat.clippingPlanes = planes
+        if (countChanged) mat.needsUpdate = true
+      }
+
+      if (detailedHandle?.group) {
+        detailedHandle.group.traverse((obj) => {
+          const mesh = obj as unknown as { isMesh?: boolean; material?: unknown }
+          if (mesh.isMesh && mesh.material) {
+            const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material]
+            for (const mat of mats) {
+              const anyMat = mat as {
+                clipping?: boolean
+                clipShadows?: boolean
+                clippingPlanes?: Plane[]
+                needsUpdate?: boolean
+              }
+              anyMat.clipping = true
+              anyMat.clipShadows = true
+              anyMat.clippingPlanes = planes
+              if (countChanged) anyMat.needsUpdate = true
+            }
+          }
+        })
+      }
+
+      needsTransparentSort = true
+      requestRender()
+    }
+
     updateLightingRef.current = applyLighting
     applyLighting(brightnessRef.current)
+
+    updateClippingRef.current = applyClipping
+    applyClipping(sliceModeRef.current, selectedLayerRef.current)
 
     const observer = new ResizeObserver(resize)
     observer.observe(host)
@@ -516,6 +689,7 @@ export function MinecraftStructureViewer({
           focusCamera('isometric', true)
           needsTransparentSort = true
           applyLighting(brightnessRef.current)
+          applyClipping(sliceModeRef.current, selectedLayerRef.current)
           setLoading()
           setRenderMode('textured')
           requestRender()
@@ -532,6 +706,7 @@ export function MinecraftStructureViewer({
     return () => {
       disposed = true
       updateLightingRef.current = null
+      updateClippingRef.current = null
       window.cancelAnimationFrame(renderFrame)
       window.cancelAnimationFrame(fillFrame)
       observer.disconnect()
@@ -539,9 +714,15 @@ export function MinecraftStructureViewer({
       controls.dispose()
       if (controllerRef.current) controllerRef.current = null
       detailedHandle?.dispose()
-      scene.remove(fallbackMesh, grid, ambient, hemisphere, keyLight, fillLight, rimLight)
+      scene.remove(fallbackMesh, grid, sliceGrid, ambient, hemisphere, keyLight, fillLight, rimLight)
       geometry.dispose()
       material.dispose()
+      sliceGrid.geometry.dispose()
+      if (Array.isArray(sliceGrid.material)) {
+        sliceGrid.material.forEach((m) => m.dispose())
+      } else {
+        sliceGrid.material.dispose()
+      }
       renderer.dispose()
       renderer.domElement.remove()
     }
@@ -689,6 +870,180 @@ export function MinecraftStructureViewer({
           ) : null}
         </div>
 
+        <div className="minecraft-viewer-toolbar-group minecraft-viewer-layer-wrapper">
+          <button
+            type="button"
+            className={
+              'minecraft-viewer-layer-btn' +
+              (sliceMode !== 'all' ? ' is-slicing' : '') +
+              (showLayerPanel ? ' is-active' : '')
+            }
+            onClick={() => setShowLayerPanel((v) => !v)}
+            title="Inspeccionar la estructura por capas (Escáner 3D)"
+          >
+            <Layers size={15} className="layer-icon" />
+            <span>
+              Capas:{' '}
+              {sliceMode === 'all'
+                ? 'Todas'
+                : sliceMode === 'cumulative'
+                  ? `1 a ${selectedLayer}`
+                  : `Capa ${selectedLayer}`}
+            </span>
+            <ChevronDown
+              size={13}
+              style={{
+                transform: showLayerPanel ? 'rotate(180deg)' : 'none',
+                transition: 'transform 0.15s ease',
+              }}
+            />
+          </button>
+
+          {showLayerPanel ? (
+            <div className="minecraft-viewer-layer-popover">
+              <div className="layer-popover-header">
+                <div className="layer-popover-title-row">
+                  <span className="layer-popover-title">Corte por Capas (Escáner)</span>
+                  <span className="layer-badge">
+                    {sliceMode === 'all'
+                      ? 'Todas'
+                      : sliceMode === 'cumulative'
+                        ? `1 a ${selectedLayer} / ${totalLayers}`
+                        : `Capa ${selectedLayer} / ${totalLayers}`}
+                  </span>
+                </div>
+                <span className="layer-coord-subtitle">
+                  Altura relativa: Y = {minY + selectedLayer - 1} · {totalLayers} capas en total
+                </span>
+              </div>
+
+              <div className="layer-mode-tabs">
+                <button
+                  type="button"
+                  className={'layer-mode-tab' + (sliceMode === 'cumulative' ? ' is-active' : '')}
+                  onClick={() => setSliceMode('cumulative')}
+                  title="Muestra desde los cimientos hasta la capa seleccionada"
+                >
+                  🧱 Acumulado (1 a Y)
+                </button>
+                <button
+                  type="button"
+                  className={'layer-mode-tab' + (sliceMode === 'single' ? ' is-active' : '')}
+                  onClick={() => setSliceMode('single')}
+                  title="Muestra únicamente la capa seleccionada como corte de escáner"
+                >
+                  🔬 Solo capa (Corte)
+                </button>
+                <button
+                  type="button"
+                  className={'layer-mode-tab' + (sliceMode === 'all' ? ' is-active' : '')}
+                  onClick={() => setSliceMode('all')}
+                  title="Muestra la estructura completa"
+                >
+                  🏛️ Ver todo
+                </button>
+              </div>
+
+              {sliceMode !== 'all' ? (
+                <>
+                  <div className="layer-slider-section">
+                    <div className="layer-slider-controls">
+                      <button
+                        type="button"
+                        className="layer-nav-btn"
+                        onClick={() => setSelectedLayer((l) => Math.max(1, l - 1))}
+                        disabled={selectedLayer <= 1}
+                        title="Bajar una capa"
+                      >
+                        <ChevronLeft size={16} />
+                      </button>
+
+                      <div className="layer-range-wrapper">
+                        <input
+                          type="range"
+                          min={1}
+                          max={totalLayers}
+                          step={1}
+                          value={selectedLayer}
+                          onChange={(e) => setSelectedLayer(Number(e.target.value))}
+                          className="minecraft-viewer-slider layer-slider"
+                        />
+                        <div className="layer-slider-ticks">
+                          <span>Capa 1</span>
+                          <span>Capa {Math.max(1, Math.round(totalLayers / 2))}</span>
+                          <span>Capa {totalLayers}</span>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        className="layer-nav-btn"
+                        onClick={() => setSelectedLayer((l) => Math.min(totalLayers, l + 1))}
+                        disabled={selectedLayer >= totalLayers}
+                        title="Subir una capa"
+                      >
+                        <ChevronRight size={16} />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="layer-stats-card">
+                    <div className="layer-stat-row">
+                      <span className="layer-stat-label">Bloques en capa {selectedLayer}:</span>
+                      <span className="layer-stat-value">
+                        {layerStats.counts[selectedLayer - 1] ?? 0} bloques
+                      </span>
+                    </div>
+                    <div className="layer-stat-row">
+                      <span className="layer-stat-label">Total hasta capa {selectedLayer}:</span>
+                      <span className="layer-stat-value">
+                        {layerStats.cumulative[selectedLayer - 1] ?? 0} / {model.states.length} ({Math.round(((layerStats.cumulative[selectedLayer - 1] ?? 0) / model.states.length) * 100)}%)
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="layer-shortcuts-row">
+                    <button
+                      type="button"
+                      className="layer-shortcut-btn"
+                      onClick={() => {
+                        controllerRef.current?.setView('top')
+                      }}
+                      title="Ver corte desde arriba como plano arquitectónico"
+                    >
+                      📐 Vista Superior (Plano 2D)
+                    </button>
+                    <button
+                      type="button"
+                      className="layer-shortcut-btn"
+                      onClick={() => setSelectedLayer(1)}
+                      disabled={selectedLayer === 1}
+                    >
+                      ⬇️ Base
+                    </button>
+                    <button
+                      type="button"
+                      className="layer-shortcut-btn"
+                      onClick={() => setSelectedLayer(totalLayers)}
+                      disabled={selectedLayer === totalLayers}
+                    >
+                      ⬆️ Cima
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <div className="layer-all-notice">
+                  <p>Mostrando la construcción completa.</p>
+                  <small>
+                    Elige <strong>Acumulado</strong> para construir paso a paso o{' '}
+                    <strong>Solo capa</strong> para ver cortes transversales y planos interiores.
+                  </small>
+                </div>
+              )}
+            </div>
+          ) : null}
+        </div>
+
         <div className="minecraft-viewer-toolbar-group minecraft-viewer-toolbar-actions">
           <button type="button" onClick={() => controllerRef.current?.reset()} title="Restablecer vista">
             <RotateCcw size={15} />
@@ -704,6 +1059,56 @@ export function MinecraftStructureViewer({
           </button>
         </div>
       </div>
+
+      {sliceMode !== 'all' && !showLayerPanel ? (
+        <div className="minecraft-viewer-compact-layer-bar">
+          <button
+            type="button"
+            className="compact-step-btn"
+            onClick={() => setSelectedLayer((l) => Math.max(1, l - 1))}
+            disabled={selectedLayer <= 1}
+            title="Capa anterior"
+          >
+            <ChevronLeft size={14} />
+          </button>
+          <button
+            type="button"
+            className="compact-layer-info-btn"
+            onClick={() => setShowLayerPanel(true)}
+            title="Abrir panel completo de capas"
+          >
+            <span className="compact-layer-mode">
+              {sliceMode === 'cumulative' ? 'Hasta Capa ' : 'Corte Capa '}
+            </span>
+            <span className="compact-layer-num">{selectedLayer}</span>
+            <span className="compact-layer-total"> / {totalLayers}</span>
+            <span className="compact-layer-count">
+              (
+              {sliceMode === 'cumulative'
+                ? layerStats.cumulative[selectedLayer - 1]
+                : layerStats.counts[selectedLayer - 1]}{' '}
+              bloques)
+            </span>
+          </button>
+          <button
+            type="button"
+            className="compact-step-btn"
+            onClick={() => setSelectedLayer((l) => Math.min(totalLayers, l + 1))}
+            disabled={selectedLayer >= totalLayers}
+            title="Capa siguiente"
+          >
+            <ChevronRight size={14} />
+          </button>
+          <button
+            type="button"
+            className="compact-reset-btn"
+            onClick={() => setSliceMode('all')}
+            title="Ver estructura completa"
+          >
+            Ver todo
+          </button>
+        </div>
+      ) : null}
       <div className="minecraft-viewer-guidance">
         Arrastra para rotar · Rueda para zoom · Clic derecho para mover
       </div>
