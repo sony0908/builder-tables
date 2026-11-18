@@ -15,6 +15,27 @@ export type MinecraftSceneHandle = {
   dispose: () => void
 }
 
+export type MinecraftLightingOptions =
+  | 'world'
+  | 'scene'
+  | 'flat'
+  | {
+      brightness?: number
+      daytime?: number | string
+      light?: boolean | unknown
+      dimension?: {
+        skyLightFactor?: number | string
+        skyLightColor?: number
+        ambientColor?: number
+        blockLightTint?: number
+        cardinalLight?:
+          | 'default'
+          | 'nether'
+          | { down?: number; up?: number; north?: number; south?: number; west?: number; east?: number }
+        hasSkyLight?: boolean
+      }
+    }
+
 export type MinecraftRendererModule = {
   configure: (options: {
     THREE: typeof Three
@@ -28,7 +49,7 @@ export type MinecraftRendererModule = {
     assets: unknown,
     blocks: MinecraftSceneBlock[],
     options: {
-      lighting: 'world'
+      lighting?: MinecraftLightingOptions
       version: string
       defaults: 'game'
       optimize: boolean

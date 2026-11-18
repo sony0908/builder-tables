@@ -20,7 +20,7 @@ import {
   WebGLRenderer,
 } from 'three'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
-import { Maximize2, RotateCcw } from 'lucide-react'
+import { ChevronDown, Maximize2, RotateCcw, SunMedium } from 'lucide-react'
 import type { ViewerModel } from '../generator/types'
 import type { MinecraftVersion } from '../generator/version-profiles'
 import {
@@ -39,6 +39,8 @@ type StructureViewerProps = {
 }
 
 type ViewPreset = 'isometric' | 'top' | 'front' | 'right'
+
+export type LightingMode = 'clear' | 'shadows'
 
 type ViewerController = {
   reset: () => void
@@ -107,6 +109,45 @@ export function MinecraftStructureViewer({
   const controllerRef = useRef<ViewerController | null>(null)
   const [renderMode, setRenderMode] = useState<RenderMode>('simple')
   const [isFullscreen, setIsFullscreen] = useState(false)
+
+  const isLargeStructure = model.states.length > 2000
+  const [brightness, setBrightness] = useState<number>(() => {
+    const saved = localStorage.getItem('builder-tables-viewer-brightness')
+    if (saved) {
+      const num = Number(saved)
+      if (!isNaN(num) && num >= 60 && num <= 250) return num
+    }
+    return isLargeStructure ? 140 : 125
+  })
+  const [lightingMode, setLightingMode] = useState<LightingMode>(() => {
+    const saved = localStorage.getItem('builder-tables-viewer-lighting-mode')
+    return saved === 'shadows' ? 'shadows' : 'clear'
+  })
+  const [showLightingMenu, setShowLightingMenu] = useState(false)
+  const brightnessRef = useRef(brightness)
+  brightnessRef.current = brightness
+  const updateLightingRef = useRef<((level: number) => void) | null>(null)
+
+  useEffect(() => {
+    localStorage.setItem('builder-tables-viewer-brightness', String(brightness))
+    updateLightingRef.current?.(brightness)
+  }, [brightness])
+
+  useEffect(() => {
+    localStorage.setItem('builder-tables-viewer-lighting-mode', lightingMode)
+  }, [lightingMode])
+
+  useEffect(() => {
+    if (!showLightingMenu) return
+    const handleClickOutside = (e: PointerEvent) => {
+      const target = e.target as HTMLElement
+      if (!target.closest('.minecraft-viewer-lighting-wrapper')) {
+        setShowLightingMenu(false)
+      }
+    }
+    document.addEventListener('pointerdown', handleClickOutside)
+    return () => document.removeEventListener('pointerdown', handleClickOutside)
+  }, [showLightingMenu])
 
   useEffect(() => {
     const onFullscreenChange = () => {
@@ -293,6 +334,63 @@ export function MinecraftStructureViewer({
       requestRender()
     }
 
+    const applyLighting = (level: number) => {
+      if (disposed) return
+      const factor = level / 100
+      renderer.toneMappingExposure = (theme === 'dark' ? 1.45 : 1.35) * factor
+
+      ambient.intensity = (theme === 'dark' ? 1.7 : 1.4) * factor
+      hemisphere.intensity = 2.0 * factor
+      keyLight.intensity = 2.8 * factor
+      fillLight.intensity = 1.8 * factor
+      rimLight.intensity = 1.5 * factor
+
+      if (detailedHandle?.group) {
+        detailedHandle.group.traverse((obj) => {
+          const mesh = obj as unknown as { isMesh?: boolean; material?: unknown }
+          if (mesh.isMesh && mesh.material) {
+            const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material]
+            for (const mat of mats) {
+              const shaderMat = mat as { uniforms?: Record<string, { value: unknown }> }
+              if (shaderMat.uniforms) {
+                if (shaderMat.uniforms.brightness) {
+                  shaderMat.uniforms.brightness.value = Math.min(1.0, 0.75 * factor)
+                }
+                if (shaderMat.uniforms.ambient) {
+                  shaderMat.uniforms.ambient.value = Math.min(1.0, 0.5 * factor)
+                }
+                if (
+                  shaderMat.uniforms.ambientColor &&
+                  typeof (shaderMat.uniforms.ambientColor.value as Color)?.setRGB === 'function'
+                ) {
+                  const baseR = 0.35 * factor
+                  const baseG = 0.42 * factor
+                  const baseB = 0.50 * factor
+                  ;(shaderMat.uniforms.ambientColor.value as Color).setRGB(
+                    Math.min(1, baseR),
+                    Math.min(1, baseG),
+                    Math.min(1, baseB),
+                  )
+                }
+                if (shaderMat.uniforms.d0) {
+                  shaderMat.uniforms.d0.value = Math.min(1.0, 0.65 * factor)
+                }
+                if (shaderMat.uniforms.d1) {
+                  shaderMat.uniforms.d1.value = Math.min(1.0, 0.65 * factor)
+                }
+              }
+            }
+          }
+        })
+      }
+
+      needsTransparentSort = true
+      requestRender()
+    }
+
+    updateLightingRef.current = applyLighting
+    applyLighting(brightnessRef.current)
+
     const observer = new ResizeObserver(resize)
     observer.observe(host)
     controls.addEventListener('change', onControlsChange)
@@ -380,8 +478,21 @@ export function MinecraftStructureViewer({
             })
           }
 
+          const computeVoxelLight = lightingMode === 'shadows'
+
           const handle = await minecraftRenderer.createScene(assets, blocks, {
-            lighting: 'world',
+            lighting: {
+              brightness: Math.min(1.0, 0.85 * (brightnessRef.current / 100)),
+              daytime: 6000,
+              light: computeVoxelLight,
+              dimension: {
+                ambientColor: computeVoxelLight ? 0x3d4856 : 0x586475,
+                skyLightColor: 0xffffff,
+                skyLightFactor: 1.0,
+                cardinalLight: { down: 0.74, up: 1.0, north: 0.88, south: 0.88, west: 0.84, east: 0.84 },
+                hasSkyLight: true,
+              },
+            },
             version,
             defaults: 'game',
             optimize: true,
@@ -404,6 +515,7 @@ export function MinecraftStructureViewer({
           activeBounds.copy(new Box3().setFromObject(handle.group))
           focusCamera('isometric', true)
           needsTransparentSort = true
+          applyLighting(brightnessRef.current)
           setLoading()
           setRenderMode('textured')
           requestRender()
@@ -419,6 +531,7 @@ export function MinecraftStructureViewer({
 
     return () => {
       disposed = true
+      updateLightingRef.current = null
       window.cancelAnimationFrame(renderFrame)
       window.cancelAnimationFrame(fillFrame)
       observer.disconnect()
@@ -432,7 +545,7 @@ export function MinecraftStructureViewer({
       renderer.dispose()
       renderer.domElement.remove()
     }
-  }, [assetFile, model, theme, version])
+  }, [assetFile, model, theme, version, lightingMode])
 
   if (model.positions.length !== model.states.length * 3) {
     return (
@@ -484,6 +597,98 @@ export function MinecraftStructureViewer({
             Lateral
           </button>
         </div>
+
+        <div className="minecraft-viewer-toolbar-group minecraft-viewer-lighting-wrapper">
+          <button
+            type="button"
+            className={'minecraft-viewer-lighting-btn' + (showLightingMenu ? ' is-active' : '')}
+            onClick={() => setShowLightingMenu((v) => !v)}
+            title="Ajustar iluminación y sombras"
+          >
+            <SunMedium size={15} className="lighting-sun-icon" />
+            <span>Luz: {brightness}%</span>
+            <ChevronDown
+              size={13}
+              style={{
+                transform: showLightingMenu ? 'rotate(180deg)' : 'none',
+                transition: 'transform 0.15s ease',
+              }}
+            />
+          </button>
+
+          {showLightingMenu ? (
+            <div className="minecraft-viewer-lighting-popover">
+              <div className="lighting-popover-header">
+                <span className="lighting-popover-title">Control de Iluminación</span>
+                <span className="lighting-popover-value">{brightness}%</span>
+              </div>
+
+              <div className="lighting-slider-row">
+                <span className="lighting-slider-icon" title="Mínimo">☀️</span>
+                <input
+                  type="range"
+                  min="60"
+                  max="250"
+                  step="5"
+                  value={brightness}
+                  onChange={(e) => setBrightness(Number(e.target.value))}
+                  className="minecraft-viewer-slider"
+                />
+                <span className="lighting-slider-icon-bright" title="Máximo">✨</span>
+              </div>
+
+              <div className="lighting-quick-presets">
+                <button
+                  type="button"
+                  className={'lighting-preset-btn' + (brightness === 100 ? ' is-selected' : '')}
+                  onClick={() => setBrightness(100)}
+                >
+                  Normal (100%)
+                </button>
+                <button
+                  type="button"
+                  className={'lighting-preset-btn' + (brightness === 140 ? ' is-selected' : '')}
+                  onClick={() => setBrightness(140)}
+                >
+                  Brillante (140%)
+                </button>
+                <button
+                  type="button"
+                  className={'lighting-preset-btn' + (brightness === 190 ? ' is-selected' : '')}
+                  onClick={() => setBrightness(190)}
+                >
+                  Máximo (190%)
+                </button>
+              </div>
+
+              <div className="lighting-mode-section">
+                <span className="lighting-mode-label">Modo de Sombras:</span>
+                <div className="lighting-mode-buttons">
+                  <button
+                    type="button"
+                    className={'lighting-mode-btn' + (lightingMode === 'clear' ? ' is-selected' : '')}
+                    onClick={() => setLightingMode('clear')}
+                  >
+                    ☀️ Día claro (Sin zonas oscuras)
+                  </button>
+                  <button
+                    type="button"
+                    className={'lighting-mode-btn' + (lightingMode === 'shadows' ? ' is-selected' : '')}
+                    onClick={() => setLightingMode('shadows')}
+                  >
+                    🌑 Sombras Vainilla
+                  </button>
+                </div>
+                <small className="lighting-mode-hint">
+                  {lightingMode === 'clear'
+                    ? 'Recomendado para estructuras grandes: elimina penumbras negras en techos, árboles y porches.'
+                    : 'Simula la oclusión ambiental y sombras oscuras del motor de Minecraft.'}
+                </small>
+              </div>
+            </div>
+          ) : null}
+        </div>
+
         <div className="minecraft-viewer-toolbar-group minecraft-viewer-toolbar-actions">
           <button type="button" onClick={() => controllerRef.current?.reset()} title="Restablecer vista">
             <RotateCcw size={15} />
