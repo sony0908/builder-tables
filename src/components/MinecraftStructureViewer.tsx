@@ -53,6 +53,8 @@ export type LightingMode = 'clear' | 'shadows'
 
 export type SlicingMode = 'all' | 'cumulative' | 'single'
 
+export type SlicingAxis = 'y' | 'x' | 'z'
+
 type ViewerController = {
   reset: () => void
   setView: (view: ViewPreset) => void
@@ -109,6 +111,54 @@ function formatProgress(stage: string, done: number, total: number) {
   return label + '… ' + percent + '%'
 }
 
+function useHoldRepeat(action: () => void, delay = 240, interval = 50) {
+  const timerRef = useRef<number | null>(null)
+  const intervalRef = useRef<number | null>(null)
+  const actionRef = useRef(action)
+  actionRef.current = action
+
+  const stop = () => {
+    if (timerRef.current !== null) {
+      window.clearTimeout(timerRef.current)
+      timerRef.current = null
+    }
+    if (intervalRef.current !== null) {
+      window.clearInterval(intervalRef.current)
+      intervalRef.current = null
+    }
+  }
+
+  const start = (e?: React.PointerEvent) => {
+    if (e && e.button !== 0) return
+    stop()
+    actionRef.current()
+    timerRef.current = window.setTimeout(() => {
+      intervalRef.current = window.setInterval(() => {
+        actionRef.current()
+      }, interval)
+    }, delay)
+  }
+
+  useEffect(() => {
+    return () => stop()
+  }, [])
+
+  return {
+    onPointerDown: start,
+    onPointerUp: stop,
+    onPointerLeave: stop,
+    onPointerCancel: stop,
+  }
+}
+
+type AxisStats = {
+  min: number
+  max: number
+  total: number
+  counts: number[]
+  cumulative: number[]
+}
+
 export function MinecraftStructureViewer({
   model,
   theme,
@@ -139,70 +189,130 @@ export function MinecraftStructureViewer({
   brightnessRef.current = brightness
   const updateLightingRef = useRef<((level: number) => void) | null>(null)
 
-  const { minY, totalLayers, layerStats } = useMemo(() => {
+  const axesData = useMemo(() => {
+    const emptyAxis: AxisStats = { min: 0, max: 0, total: 1, counts: [0], cumulative: [0] }
+    const result: Record<SlicingAxis, AxisStats> = {
+      y: { ...emptyAxis },
+      x: { ...emptyAxis },
+      z: { ...emptyAxis },
+    }
+
     if (!model.states.length || model.positions.length !== model.states.length * 3) {
-      return { minY: 0, maxY: 0, totalLayers: 1, layerStats: { counts: [0], cumulative: [0] } }
+      return result
     }
 
-    let min = Infinity
-    let max = -Infinity
     const totalBlocks = model.states.length
+    let minX = Infinity, maxX = -Infinity
+    let minY = Infinity, maxY = -Infinity
+    let minZ = Infinity, maxZ = -Infinity
 
     for (let i = 0; i < totalBlocks; i++) {
-      const y = model.positions[i * 3 + 1]
-      if (y < min) min = y
-      if (y > max) max = y
+      const px = model.positions[i * 3]
+      const py = model.positions[i * 3 + 1]
+      const pz = model.positions[i * 3 + 2]
+      if (px < minX) minX = px
+      if (px > maxX) maxX = px
+      if (py < minY) minY = py
+      if (py > maxY) maxY = py
+      if (pz < minZ) minZ = pz
+      if (pz > maxZ) maxZ = pz
     }
 
-    if (min === Infinity) {
-      return { minY: 0, maxY: 0, totalLayers: 1, layerStats: { counts: [0], cumulative: [0] } }
-    }
+    if (minY === Infinity) return result
 
-    const roundedMin = Math.round(min)
-    const roundedMax = Math.round(max)
-    const layersCount = Math.max(1, roundedMax - roundedMin + 1)
-    const counts = new Array<number>(layersCount).fill(0)
+    const buildAxis = (minVal: number, maxVal: number, offset: number): AxisStats => {
+      const rMin = Math.round(minVal)
+      const rMax = Math.round(maxVal)
+      const total = Math.max(1, rMax - rMin + 1)
+      const counts = new Array<number>(total).fill(0)
 
-    for (let i = 0; i < totalBlocks; i++) {
-      const y = Math.round(model.positions[i * 3 + 1])
-      const layerIdx = y - roundedMin
-      if (layerIdx >= 0 && layerIdx < layersCount) {
-        counts[layerIdx]++
+      for (let i = 0; i < totalBlocks; i++) {
+        const val = Math.round(model.positions[i * 3 + offset])
+        const idx = val - rMin
+        if (idx >= 0 && idx < total) {
+          counts[idx]++
+        }
       }
+
+      const cumulative = new Array<number>(total).fill(0)
+      let sum = 0
+      for (let i = 0; i < total; i++) {
+        sum += counts[i]
+        cumulative[i] = sum
+      }
+
+      return { min: rMin, max: rMax, total, counts, cumulative }
     }
 
-    const cumulative = new Array<number>(layersCount).fill(0)
-    let sum = 0
-    for (let i = 0; i < layersCount; i++) {
-      sum += counts[i]
-      cumulative[i] = sum
-    }
+    result.y = buildAxis(minY, maxY, 1)
+    result.x = buildAxis(minX, maxX, 0)
+    result.z = buildAxis(minZ, maxZ, 2)
 
-    return {
-      minY: roundedMin,
-      maxY: roundedMax,
-      totalLayers: layersCount,
-      layerStats: { counts, cumulative },
-    }
+    return result
   }, [model])
 
+  const [sliceAxis, setSliceAxis] = useState<SlicingAxis>('y')
   const [sliceMode, setSliceMode] = useState<SlicingMode>('all')
-  const [selectedLayer, setSelectedLayer] = useState<number>(totalLayers)
+  const [showSliceGuide, setShowSliceGuide] = useState(true)
+  const currentAxisData = axesData[sliceAxis]
+  const [selectedLayer, setSelectedLayer] = useState<number>(currentAxisData.total)
   const [showLayerPanel, setShowLayerPanel] = useState(false)
 
   const sliceModeRef = useRef(sliceMode)
   sliceModeRef.current = sliceMode
+  const sliceAxisRef = useRef(sliceAxis)
+  sliceAxisRef.current = sliceAxis
   const selectedLayerRef = useRef(selectedLayer)
   selectedLayerRef.current = selectedLayer
-  const updateClippingRef = useRef<((mode: SlicingMode, layer: number) => void) | null>(null)
+  const showSliceGuideRef = useRef(showSliceGuide)
+  showSliceGuideRef.current = showSliceGuide
+  const updateClippingRef = useRef<
+    ((mode: SlicingMode, axis: SlicingAxis, layer: number, guideVisible: boolean) => void) | null
+  >(null)
+
+  const stepLayer = (delta: number) => {
+    setSelectedLayer((prev) => {
+      const total = axesData[sliceAxisRef.current].total
+      return Math.max(1, Math.min(total, prev + delta))
+    })
+  }
+
+  const prevHold = useHoldRepeat(() => stepLayer(-1))
+  const nextHold = useHoldRepeat(() => stepLayer(1))
 
   useEffect(() => {
-    setSelectedLayer(totalLayers)
-  }, [totalLayers])
+    setSelectedLayer(axesData[sliceAxis].total)
+  }, [sliceAxis, axesData])
 
   useEffect(() => {
-    updateClippingRef.current?.(sliceMode, selectedLayer)
-  }, [sliceMode, selectedLayer])
+    updateClippingRef.current?.(sliceMode, sliceAxis, selectedLayer, showSliceGuide)
+  }, [sliceMode, sliceAxis, selectedLayer, showSliceGuide])
+
+  useEffect(() => {
+    const root = rootRef.current
+    if (!root) return
+
+    const handleWheel = (e: WheelEvent) => {
+      if (sliceModeRef.current === 'all') return
+
+      const isMiddleDown = (e.buttons & 4) === 4
+      const target = e.target as HTMLElement
+      const overLayerControls = Boolean(
+        target?.closest(
+          '.minecraft-viewer-layer-popover, .minecraft-viewer-compact-layer-bar, .minecraft-viewer-layer-btn'
+        )
+      )
+
+      if (e.shiftKey || isMiddleDown || overLayerControls) {
+        e.preventDefault()
+        e.stopPropagation()
+        stepLayer(e.deltaY < 0 ? 1 : -1)
+      }
+    }
+
+    root.addEventListener('wheel', handleWheel, { passive: false })
+    return () => root.removeEventListener('wheel', handleWheel)
+  }, [axesData])
 
   useEffect(() => {
     if (!showLayerPanel) return
@@ -357,15 +467,22 @@ export function MinecraftStructureViewer({
     grid.position.set(center.x, fallbackBounds.min.y - 0.51, center.z)
     scene.add(grid)
 
-    // Cuadrícula dinámica del plano de corte / escáner
+    // Cuadrícula dinámica del plano de corte / escáner (suave, difuminada y no oclusiva)
+    const maxDimension = Math.max(span.x, span.y, span.z, 4) * 1.3
     const sliceGrid = new GridHelper(
-      gridSize,
-      Math.min(128, Math.max(Math.round(gridSize), 4)),
-      theme === 'dark' ? '#06b6d4' : '#0284c7',
-      theme === 'dark' ? '#164e63' : '#bae6fd',
+      maxDimension,
+      Math.min(48, Math.max(Math.round(maxDimension / 2), 4)),
+      theme === 'dark' ? 0x38bdf8 : 0x0284c7,
+      theme === 'dark' ? 0x075985 : 0x7dd3fc,
     )
     sliceGrid.position.set(center.x, fallbackBounds.min.y, center.z)
     sliceGrid.visible = false
+    const sliceGridMats = Array.isArray(sliceGrid.material) ? sliceGrid.material : [sliceGrid.material]
+    for (const m of sliceGridMats) {
+      m.transparent = true
+      m.opacity = 0.12
+      m.depthWrite = false
+    }
     scene.add(sliceGrid)
 
     const geometry = new BoxGeometry(0.96, 0.96, 0.96)
@@ -495,28 +612,69 @@ export function MinecraftStructureViewer({
 
     let prevPlanesCount = -1
 
-    const applyClipping = (mode: SlicingMode, layer: number) => {
+    const applyClipping = (
+      mode: SlicingMode,
+      axis: SlicingAxis,
+      layer: number,
+      guideVisible: boolean,
+    ) => {
       if (disposed) return
 
       let planes: Plane[] = []
+      const axisData = axesData[axis]
+      const total = axisData.total
 
-      if (mode !== 'all' && totalLayers > 0) {
-        const clampedLayer = Math.max(1, Math.min(layer, totalLayers))
-        const yBottom = activeBounds.min.y + (clampedLayer - 1) - 0.005
-        const yTop = activeBounds.min.y + clampedLayer + 0.005
+      if (mode !== 'all' && total > 0) {
+        const clampedLayer = Math.max(1, Math.min(layer, total))
 
-        if (mode === 'cumulative') {
-          planes = [new Plane(new Vector3(0, -1, 0), yTop)]
-          sliceGrid.position.set(center.x, yTop - 0.005, center.z)
-          sliceGrid.visible = true
-        } else if (mode === 'single') {
-          planes = [
-            new Plane(new Vector3(0, -1, 0), yTop),
-            new Plane(new Vector3(0, 1, 0), -yBottom),
-          ]
-          sliceGrid.position.set(center.x, yBottom + 0.005, center.z)
-          sliceGrid.visible = true
+        if (axis === 'y') {
+          const yBottom = activeBounds.min.y + (clampedLayer - 1) - 0.005
+          const yTop = activeBounds.min.y + clampedLayer + 0.005
+
+          if (mode === 'cumulative') {
+            planes = [new Plane(new Vector3(0, -1, 0), yTop)]
+            sliceGrid.position.set(center.x, yTop - 0.005, center.z)
+          } else if (mode === 'single') {
+            planes = [
+              new Plane(new Vector3(0, -1, 0), yTop),
+              new Plane(new Vector3(0, 1, 0), -yBottom),
+            ]
+            sliceGrid.position.set(center.x, yBottom + 0.005, center.z)
+          }
+          sliceGrid.rotation.set(0, 0, 0)
+        } else if (axis === 'x') {
+          const xBottom = activeBounds.min.x + (clampedLayer - 1) - 0.005
+          const xTop = activeBounds.min.x + clampedLayer + 0.005
+
+          if (mode === 'cumulative') {
+            planes = [new Plane(new Vector3(-1, 0, 0), xTop)]
+            sliceGrid.position.set(xTop - 0.005, center.y, center.z)
+          } else if (mode === 'single') {
+            planes = [
+              new Plane(new Vector3(-1, 0, 0), xTop),
+              new Plane(new Vector3(1, 0, 0), -xBottom),
+            ]
+            sliceGrid.position.set(xBottom + 0.005, center.y, center.z)
+          }
+          sliceGrid.rotation.set(0, 0, Math.PI / 2)
+        } else if (axis === 'z') {
+          const zBottom = activeBounds.min.z + (clampedLayer - 1) - 0.005
+          const zTop = activeBounds.min.z + clampedLayer + 0.005
+
+          if (mode === 'cumulative') {
+            planes = [new Plane(new Vector3(0, 0, -1), zTop)]
+            sliceGrid.position.set(center.x, center.y, zTop - 0.005)
+          } else if (mode === 'single') {
+            planes = [
+              new Plane(new Vector3(0, 0, -1), zTop),
+              new Plane(new Vector3(0, 0, 1), -zBottom),
+            ]
+            sliceGrid.position.set(center.x, center.y, zBottom + 0.005)
+          }
+          sliceGrid.rotation.set(Math.PI / 2, 0, 0)
         }
+
+        sliceGrid.visible = guideVisible
       } else {
         sliceGrid.visible = false
       }
@@ -562,7 +720,12 @@ export function MinecraftStructureViewer({
     applyLighting(brightnessRef.current)
 
     updateClippingRef.current = applyClipping
-    applyClipping(sliceModeRef.current, selectedLayerRef.current)
+    applyClipping(
+      sliceModeRef.current,
+      sliceAxisRef.current,
+      selectedLayerRef.current,
+      showSliceGuideRef.current,
+    )
 
     const observer = new ResizeObserver(resize)
     observer.observe(host)
@@ -689,7 +852,12 @@ export function MinecraftStructureViewer({
           focusCamera('isometric', true)
           needsTransparentSort = true
           applyLighting(brightnessRef.current)
-          applyClipping(sliceModeRef.current, selectedLayerRef.current)
+          applyClipping(
+            sliceModeRef.current,
+            sliceAxisRef.current,
+            selectedLayerRef.current,
+            showSliceGuideRef.current,
+          )
           setLoading()
           setRenderMode('textured')
           requestRender()
@@ -762,6 +930,12 @@ export function MinecraftStructureViewer({
         ref={hostRef}
         className="minecraft-viewer-canvas"
         aria-label="Visor 3D de la estructura"
+        onPointerDown={(e) => {
+          if (e.button === 1) {
+            e.preventDefault()
+            setSliceMode((m) => (m === 'all' ? 'single' : 'all'))
+          }
+        }}
       />
       <div className="minecraft-viewer-toolbar" aria-label="Controles del visor">
         <div className="minecraft-viewer-toolbar-group">
@@ -879,16 +1053,14 @@ export function MinecraftStructureViewer({
               (showLayerPanel ? ' is-active' : '')
             }
             onClick={() => setShowLayerPanel((v) => !v)}
-            title="Inspeccionar la estructura por capas (Escáner 3D)"
+            title="Inspeccionar la estructura por capas o cortes sagitales (Escáner 3D)"
           >
             <Layers size={15} className="layer-icon" />
             <span>
               Capas:{' '}
               {sliceMode === 'all'
                 ? 'Todas'
-                : sliceMode === 'cumulative'
-                  ? `1 a ${selectedLayer}`
-                  : `Capa ${selectedLayer}`}
+                : `${sliceAxis === 'y' ? 'Y' : sliceAxis === 'x' ? 'Sagital X' : 'Frontal Z'}: ${selectedLayer}`}
             </span>
             <ChevronDown
               size={13}
@@ -907,14 +1079,40 @@ export function MinecraftStructureViewer({
                   <span className="layer-badge">
                     {sliceMode === 'all'
                       ? 'Todas'
-                      : sliceMode === 'cumulative'
-                        ? `1 a ${selectedLayer} / ${totalLayers}`
-                        : `Capa ${selectedLayer} / ${totalLayers}`}
+                      : `${sliceAxis === 'y' ? 'Transversal Y' : sliceAxis === 'x' ? 'Sagital X' : 'Frontal Z'}: ${selectedLayer} / ${currentAxisData.total}`}
                   </span>
                 </div>
                 <span className="layer-coord-subtitle">
-                  Altura relativa: Y = {minY + selectedLayer - 1} · {totalLayers} capas en total
+                  Posición relativa: {sliceAxis.toUpperCase()} = {currentAxisData.min + selectedLayer - 1} · {currentAxisData.total} cortes en este eje
                 </span>
+              </div>
+
+              {/* Selector de plano / orientación del corte */}
+              <div className="layer-axis-tabs" role="tablist" aria-label="Plano de corte">
+                <button
+                  type="button"
+                  className={'layer-axis-tab' + (sliceAxis === 'y' ? ' is-active' : '')}
+                  onClick={() => setSliceAxis('y')}
+                  title="Corte horizontal de suelo a techo (Pisos)"
+                >
+                  ↕️ Transversal (Y)
+                </button>
+                <button
+                  type="button"
+                  className={'layer-axis-tab' + (sliceAxis === 'x' ? ' is-active' : '')}
+                  onClick={() => setSliceAxis('x')}
+                  title="Corte longitudinal de lado a lado"
+                >
+                  ↔️ Sagital (X)
+                </button>
+                <button
+                  type="button"
+                  className={'layer-axis-tab' + (sliceAxis === 'z' ? ' is-active' : '')}
+                  onClick={() => setSliceAxis('z')}
+                  title="Corte frontal de fachada a fondo"
+                >
+                  ↗️ Frontal (Z)
+                </button>
               </div>
 
               <div className="layer-mode-tabs">
@@ -922,15 +1120,15 @@ export function MinecraftStructureViewer({
                   type="button"
                   className={'layer-mode-tab' + (sliceMode === 'cumulative' ? ' is-active' : '')}
                   onClick={() => setSliceMode('cumulative')}
-                  title="Muestra desde los cimientos hasta la capa seleccionada"
+                  title="Muestra acumulado desde el inicio hasta el corte elegido"
                 >
-                  🧱 Acumulado (1 a Y)
+                  🧱 Acumulado (1 a {sliceAxis.toUpperCase()})
                 </button>
                 <button
                   type="button"
                   className={'layer-mode-tab' + (sliceMode === 'single' ? ' is-active' : '')}
                   onClick={() => setSliceMode('single')}
-                  title="Muestra únicamente la capa seleccionada como corte de escáner"
+                  title="Muestra únicamente la rebanada seleccionada como corte de escáner"
                 >
                   🔬 Solo capa (Corte)
                 </button>
@@ -951,9 +1149,9 @@ export function MinecraftStructureViewer({
                       <button
                         type="button"
                         className="layer-nav-btn"
-                        onClick={() => setSelectedLayer((l) => Math.max(1, l - 1))}
+                        {...prevHold}
                         disabled={selectedLayer <= 1}
-                        title="Bajar una capa"
+                        title="Retroceder corte (Mantén presionado para avance continuo)"
                       >
                         <ChevronLeft size={16} />
                       </button>
@@ -962,42 +1160,45 @@ export function MinecraftStructureViewer({
                         <input
                           type="range"
                           min={1}
-                          max={totalLayers}
+                          max={currentAxisData.total}
                           step={1}
                           value={selectedLayer}
                           onChange={(e) => setSelectedLayer(Number(e.target.value))}
                           className="minecraft-viewer-slider layer-slider"
                         />
                         <div className="layer-slider-ticks">
-                          <span>Capa 1</span>
-                          <span>Capa {Math.max(1, Math.round(totalLayers / 2))}</span>
-                          <span>Capa {totalLayers}</span>
+                          <span>1</span>
+                          <span>{Math.max(1, Math.round(currentAxisData.total / 2))}</span>
+                          <span>{currentAxisData.total}</span>
                         </div>
                       </div>
 
                       <button
                         type="button"
                         className="layer-nav-btn"
-                        onClick={() => setSelectedLayer((l) => Math.min(totalLayers, l + 1))}
-                        disabled={selectedLayer >= totalLayers}
-                        title="Subir una capa"
+                        {...nextHold}
+                        disabled={selectedLayer >= currentAxisData.total}
+                        title="Avanzar corte (Mantén presionado para avance continuo)"
                       >
                         <ChevronRight size={16} />
                       </button>
                     </div>
+                    <small className="layer-scroll-hint">
+                      💡 Tip: Mantén presionadas las flechas o usa Shift + Rueda del ratón para deslizar suavemente.
+                    </small>
                   </div>
 
                   <div className="layer-stats-card">
                     <div className="layer-stat-row">
-                      <span className="layer-stat-label">Bloques en capa {selectedLayer}:</span>
+                      <span className="layer-stat-label">Bloques en este corte:</span>
                       <span className="layer-stat-value">
-                        {layerStats.counts[selectedLayer - 1] ?? 0} bloques
+                        {currentAxisData.counts[selectedLayer - 1] ?? 0} bloques
                       </span>
                     </div>
                     <div className="layer-stat-row">
-                      <span className="layer-stat-label">Total hasta capa {selectedLayer}:</span>
+                      <span className="layer-stat-label">Total hasta este corte:</span>
                       <span className="layer-stat-value">
-                        {layerStats.cumulative[selectedLayer - 1] ?? 0} / {model.states.length} ({Math.round(((layerStats.cumulative[selectedLayer - 1] ?? 0) / model.states.length) * 100)}%)
+                        {currentAxisData.cumulative[selectedLayer - 1] ?? 0} / {model.states.length} ({Math.round(((currentAxisData.cumulative[selectedLayer - 1] ?? 0) / model.states.length) * 100)}%)
                       </span>
                     </div>
                   </div>
@@ -1007,11 +1208,21 @@ export function MinecraftStructureViewer({
                       type="button"
                       className="layer-shortcut-btn"
                       onClick={() => {
-                        controllerRef.current?.setView('top')
+                        if (sliceAxis === 'y') controllerRef.current?.setView('top')
+                        else if (sliceAxis === 'x') controllerRef.current?.setView('right')
+                        else controllerRef.current?.setView('front')
                       }}
-                      title="Ver corte desde arriba como plano arquitectónico"
+                      title="Alinear cámara de forma perpendicular al plano de corte"
                     >
-                      📐 Vista Superior (Plano 2D)
+                      📐 Vista {sliceAxis === 'y' ? 'Superior (Plano)' : sliceAxis === 'x' ? 'Lateral (Corte)' : 'Frontal (Corte)'}
+                    </button>
+                    <button
+                      type="button"
+                      className={'layer-shortcut-btn' + (showSliceGuide ? ' is-active' : '')}
+                      onClick={() => setShowSliceGuide((v) => !v)}
+                      title="Activar u ocultar la cuadrícula holográfica de escáner"
+                    >
+                      {showSliceGuide ? '👁️ Guía ON' : '👁️‍🗨️ Guía OFF'}
                     </button>
                     <button
                       type="button"
@@ -1019,15 +1230,15 @@ export function MinecraftStructureViewer({
                       onClick={() => setSelectedLayer(1)}
                       disabled={selectedLayer === 1}
                     >
-                      ⬇️ Base
+                      ⬇️ Inicio
                     </button>
                     <button
                       type="button"
                       className="layer-shortcut-btn"
-                      onClick={() => setSelectedLayer(totalLayers)}
-                      disabled={selectedLayer === totalLayers}
+                      onClick={() => setSelectedLayer(currentAxisData.total)}
+                      disabled={selectedLayer === currentAxisData.total}
                     >
-                      ⬆️ Cima
+                      ⬆️ Fin
                     </button>
                   </div>
                 </>
@@ -1036,7 +1247,7 @@ export function MinecraftStructureViewer({
                   <p>Mostrando la construcción completa.</p>
                   <small>
                     Elige <strong>Acumulado</strong> para construir paso a paso o{' '}
-                    <strong>Solo capa</strong> para ver cortes transversales y planos interiores.
+                    <strong>Solo capa</strong> para ver cortes transversales, sagitales o frontales.
                   </small>
                 </div>
               )}
@@ -1065,9 +1276,9 @@ export function MinecraftStructureViewer({
           <button
             type="button"
             className="compact-step-btn"
-            onClick={() => setSelectedLayer((l) => Math.max(1, l - 1))}
+            {...prevHold}
             disabled={selectedLayer <= 1}
-            title="Capa anterior"
+            title="Corte anterior (Mantén presionado para avance rápido)"
           >
             <ChevronLeft size={14} />
           </button>
@@ -1075,27 +1286,27 @@ export function MinecraftStructureViewer({
             type="button"
             className="compact-layer-info-btn"
             onClick={() => setShowLayerPanel(true)}
-            title="Abrir panel completo de capas"
+            title="Abrir panel completo de cortes"
           >
             <span className="compact-layer-mode">
-              {sliceMode === 'cumulative' ? 'Hasta Capa ' : 'Corte Capa '}
+              {sliceAxis === 'y' ? 'Transversal Y' : sliceAxis === 'x' ? 'Sagital X' : 'Frontal Z'}:{' '}
             </span>
             <span className="compact-layer-num">{selectedLayer}</span>
-            <span className="compact-layer-total"> / {totalLayers}</span>
+            <span className="compact-layer-total"> / {currentAxisData.total}</span>
             <span className="compact-layer-count">
               (
               {sliceMode === 'cumulative'
-                ? layerStats.cumulative[selectedLayer - 1]
-                : layerStats.counts[selectedLayer - 1]}{' '}
+                ? currentAxisData.cumulative[selectedLayer - 1]
+                : currentAxisData.counts[selectedLayer - 1]}{' '}
               bloques)
             </span>
           </button>
           <button
             type="button"
             className="compact-step-btn"
-            onClick={() => setSelectedLayer((l) => Math.min(totalLayers, l + 1))}
-            disabled={selectedLayer >= totalLayers}
-            title="Capa siguiente"
+            {...nextHold}
+            disabled={selectedLayer >= currentAxisData.total}
+            title="Corte siguiente (Mantén presionado para avance rápido)"
           >
             <ChevronRight size={14} />
           </button>
@@ -1110,7 +1321,7 @@ export function MinecraftStructureViewer({
         </div>
       ) : null}
       <div className="minecraft-viewer-guidance">
-        Arrastra para rotar · Rueda para zoom · Clic derecho para mover
+        Arrastra para rotar · Rueda para zoom · Shift+Rueda o mantener flechas para pasar cortes
       </div>
       <div
         className={'minecraft-viewer-status minecraft-viewer-status-' + renderMode}
