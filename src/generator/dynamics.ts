@@ -2,7 +2,7 @@ import { rotatedFillBounds, splitStructureRegions, type Rotation } from './geome
 import type { GeneratedStructure } from './nbt'
 import type { TextFileWriter } from './preview'
 import { BANK_CARD_CUSTOM_DATA, BANK_CARD_ITEM } from './bank'
-import { packIdNumber, structurePlanId, type JsonFileWriter } from './controller'
+import { structurePlanId, type JsonFileWriter } from './controller'
 
 const CONTROLLER_BLOCK = 'minecraft:note_block'
 const CONFIRM_OBJECTIVES = ['bt_confirm1', 'bt_confirm2']
@@ -568,14 +568,6 @@ function addDynamicFiles(
     )
   })
 
-  const packNum = packIdNumber(packId)
-  packTriggers.push(
-    'execute as @a[scores={bt_open_pack=' +
-      packNum +
-      '}] run dialog show @s builder_tables:catalogo_' +
-      packId,
-  )
-
   put(
     'data/builder_tables/function/pack_' + packId + '/triggers.mcfunction',
     mcfunction(packTriggers),
@@ -601,11 +593,6 @@ function addDynamicFiles(
         '# Dynamic triggers',
         'function #builder_tables:pack_triggers',
         ...triggers,
-        'execute as @a[scores={bt_open_pack=' +
-          packNum +
-          '}] run dialog show @s builder_tables:catalogo_' +
-          packId,
-        'scoreboard players reset @a[scores={bt_open_pack=1..}] bt_open_pack',
         'scoreboard players reset @a[scores={bt_trigger=1..}] bt_trigger',
         'scoreboard players reset @a[scores={bt_undo=1..}] bt_undo',
       ],
@@ -644,7 +631,7 @@ function addControllerFunctions(
   const tick = [
     'function builder_tables_generated:controller_block/validate',
     'execute as @a unless score @s bt_rot_state matches 0.. run scoreboard players set @s bt_rot_state 0',
-    'scoreboard players enable @a bt_open_pack',
+    'scoreboard players enable @a bt_next_pack',
     'scoreboard players enable @a bt_trigger',
     'scoreboard players enable @a bt_undo',
     'scoreboard players enable @a bt_rot',
@@ -661,7 +648,8 @@ function addControllerFunctions(
   })
   tick.push(
     'function #builder_tables:pack_triggers',
-    'scoreboard players reset @a[scores={bt_open_pack=1..}] bt_open_pack',
+    'execute as @a[scores={bt_next_pack=1..}] run function builder_tables:controller/next_pack',
+    'scoreboard players reset @a[scores={bt_next_pack=1..}] bt_next_pack',
     ...structures.map(
       (structure) =>
         'execute as @a[scores={bt_select=' +
@@ -729,19 +717,19 @@ function addControllerFunctions(
     mcfunction([
       'scoreboard players set #installed_packs bt_pack_count 0',
       'function #builder_tables:menu/register_pack',
-      'execute if score #installed_packs bt_pack_count matches 1 run function #builder_tables:menu/open_single_pack',
-      'execute if score #installed_packs bt_pack_count matches 2.. run function builder_tables:controller/show_pack_selector',
+      'execute unless score #active_pack bt_pack_index matches 1.. run scoreboard players set #active_pack bt_pack_index 1',
+      'execute if score #active_pack bt_pack_index > #installed_packs bt_pack_count run scoreboard players set #active_pack bt_pack_index 1',
+      'function #builder_tables:menu/open_pack_by_index',
       'execute if score #installed_packs bt_pack_count matches ..0 run dialog show @s builder_tables:catalogo',
     ]),
   )
   put(
-    'data/builder_tables/function/controller/show_pack_selector.mcfunction',
+    'data/builder_tables/function/controller/next_pack.mcfunction',
     mcfunction([
-      'tellraw @s ["",{"text":"═══════════════════════════════════════","color":"gold","strikethrough":true}]',
-      'tellraw @s ["",{"text":" 📦 PAQUETES DE CONSTRUCCIÓN DISPONIBLES","color":"gold","bold":true}]',
-      'tellraw @s ["",{"text":" Selecciona un paquete para abrir sus planos:","color":"gray"}]',
-      'function #builder_tables:menu/show_pack_entry',
-      'tellraw @s ["",{"text":"═══════════════════════════════════════","color":"gold","strikethrough":true}]',
+      'scoreboard players add #active_pack bt_pack_index 1',
+      'execute if score #active_pack bt_pack_index > #installed_packs bt_pack_count run scoreboard players set #active_pack bt_pack_index 1',
+      'function #builder_tables:menu/open_pack_by_index',
+      'execute if score #installed_packs bt_pack_count matches 1 run title @s actionbar {"text":"Solo hay 1 paquete de planos instalado","color":"yellow"}',
     ]),
   )
   put(

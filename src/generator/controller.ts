@@ -97,6 +97,25 @@ function addDialogs(
   structures: GeneratedStructure[],
   packMeta: PackMeta = { id: 'default', name: 'Planos de construccion' },
 ) {
+  const catalogActions = structures.map((structure) => {
+    const plan = structurePlanId(structure.analysis.id)
+    return action(
+      structure.analysis.name,
+      'trigger bt_select set ' + plan,
+    )
+  }).map((entry, index) => ({
+    ...entry,
+    tooltip: {
+      text:
+        structures[index].analysis.size.join(' x ') +
+        ' | ' +
+        structures[index].analysis.count +
+        ' bloques | ' +
+        structures[index].analysis.price +
+        ' esmeraldas',
+    },
+  }))
+
   const catalogDialog = {
     type: 'minecraft:multi_action',
     title: { text: packMeta.name },
@@ -105,24 +124,16 @@ function addDialogs(
       contents: { text: 'Selecciona una construccion.' },
     },
     columns: 2,
-    actions: structures.map((structure) => {
-      const plan = structurePlanId(structure.analysis.id)
-      return action(
-        structure.analysis.name,
-        'trigger bt_select set ' + plan,
-      )
-    }).map((entry, index) => ({
-      ...entry,
-      tooltip: {
-        text:
-          structures[index].analysis.size.join(' x ') +
-          ' | ' +
-          structures[index].analysis.count +
-          ' bloques | ' +
-          structures[index].analysis.price +
-          ' esmeraldas',
+    actions: [
+      ...catalogActions,
+      {
+        label: { text: '➔ Cambiar Paquete', color: 'gold' },
+        action: { type: 'run_command', command: 'trigger bt_next_pack set 1' },
+        tooltip: {
+          text: 'Ver planos de otros paquetes de construcción instalados',
+        },
       },
-    })),
+    ],
     exit_action: { label: { text: 'Salir' } },
   }
 
@@ -367,7 +378,8 @@ const BANK_TRIGGER_OBJECTIVES = [
         )
         .concat([
           'scoreboard objectives add bt_pack_count dummy',
-          'scoreboard objectives add bt_open_pack trigger',
+          'scoreboard objectives add bt_pack_index dummy',
+          'scoreboard objectives add bt_next_pack trigger',
           'scoreboard players set #ten bt_interest_math 10',
           'scoreboard players set #hundred bt_interest_math 100',
           'scoreboard players set #tier1_limit bt_interest_math 25000',
@@ -546,88 +558,23 @@ function addPackMenuHooks(
   packMeta: PackMeta,
 ) {
   const packRoot = 'data/builder_tables/function/pack_' + packMeta.id + '/menu/'
-  const packNum = packIdNumber(packMeta.id)
 
-  // 1. Registro de presencia del paquete
+  // 1. Registro dinámico de presencia e índice del paquete
   put(
     packRoot + 'register.mcfunction',
-    '# Registrar presencia del paquete ' + packMeta.name + '\n' +
-      'scoreboard players add #installed_packs bt_pack_count 1\n',
+    '# Registrar presencia y asignar indice al paquete ' + packMeta.name + '\n' +
+      'scoreboard players add #installed_packs bt_pack_count 1\n' +
+      'scoreboard players operation #pack_' + packMeta.id + ' bt_pack_index = #installed_packs bt_pack_count\n',
   )
 
-  // 2. Abrir si es el único paquete instalado
+  // 2. Abrir diálogo de este paquete si coincide con el índice activo
   put(
-    packRoot + 'open_if_only.mcfunction',
-    '# Si este es el unico paquete instalado, abrir su catalogo directamente\n' +
-      'execute if score #installed_packs bt_pack_count matches 1 run dialog show @s builder_tables:catalogo_' +
-      packMeta.id +
-      '\n',
+    packRoot + 'open_pack.mcfunction',
+    '# Abrir catalogo si este paquete es el seleccionado\n' +
+      'execute if score #active_pack bt_pack_index = #pack_' + packMeta.id + ' bt_pack_index run dialog show @s builder_tables:catalogo_' + packMeta.id + '\n',
   )
 
-  // 3. Entrada en el chat para el selector de paquetes (funciona en Survival mediante /trigger)
-  const countText =
-    structures.length + (structures.length === 1 ? ' construccion' : ' construcciones')
-  const openCmd = '/trigger bt_open_pack set ' + packNum
-  const hoverMsg = 'Haz clic para abrir el catálogo de ' + packMeta.name
-
-  const chatEntry = JSON.stringify([
-    '',
-    {
-      text: '  ▶ ',
-      color: 'gold',
-      clickEvent: { action: 'run_command', value: openCmd },
-      hoverEvent: { action: 'show_text', contents: hoverMsg },
-    },
-    {
-      text: '[Pack: ',
-      color: 'yellow',
-      clickEvent: { action: 'run_command', value: openCmd },
-      hoverEvent: { action: 'show_text', contents: hoverMsg },
-    },
-    {
-      text: packMeta.name,
-      color: 'aqua',
-      bold: true,
-      clickEvent: { action: 'run_command', value: openCmd },
-      hoverEvent: { action: 'show_text', contents: hoverMsg },
-    },
-    {
-      text: '] ',
-      color: 'yellow',
-      clickEvent: { action: 'run_command', value: openCmd },
-      hoverEvent: { action: 'show_text', contents: hoverMsg },
-    },
-    {
-      text: '(' + countText + ') ',
-      color: 'gray',
-    },
-    {
-      text: '[Abrir Catalogo]',
-      color: 'green',
-      bold: true,
-      clickEvent: { action: 'run_command', value: openCmd },
-      hoverEvent: { action: 'show_text', contents: hoverMsg },
-    },
-  ])
-
-  put(
-    packRoot + 'show_entry.mcfunction',
-    '# Mostrar entrada interactiva en el selector de paquetes\n' +
-      'tellraw @s ' + chatEntry + '\n',
-  )
-
-  // 4. Trigger de apertura de diálogo cuando el jugador hace clic en el chat
-  put(
-    packRoot + 'trigger.mcfunction',
-    '# Abrir catalogo del paquete al recibir el trigger del selector\n' +
-      'execute as @a[scores={bt_open_pack=' +
-      packNum +
-      '}] run dialog show @s builder_tables:catalogo_' +
-      packMeta.id +
-      '\n',
-  )
-
-  // 5. Abrir plano activo si pertenece a este paquete
+  // 3. Abrir plano activo si pertenece a este paquete
   const openPlanLines = [
     '# Abrir plano activo si pertenece a este paquete',
     ...structures.map(
@@ -644,11 +591,8 @@ function addPackMenuHooks(
   putJson('data/builder_tables/tags/function/menu/register_pack.json', {
     values: ['builder_tables:pack_' + packMeta.id + '/menu/register'],
   })
-  putJson('data/builder_tables/tags/function/menu/open_single_pack.json', {
-    values: ['builder_tables:pack_' + packMeta.id + '/menu/open_if_only'],
-  })
-  putJson('data/builder_tables/tags/function/menu/show_pack_entry.json', {
-    values: ['builder_tables:pack_' + packMeta.id + '/menu/show_entry'],
+  putJson('data/builder_tables/tags/function/menu/open_pack_by_index.json', {
+    values: ['builder_tables:pack_' + packMeta.id + '/menu/open_pack'],
   })
   putJson('data/builder_tables/tags/function/menu/open_plan.json', {
     values: ['builder_tables:pack_' + packMeta.id + '/menu/open_plan'],

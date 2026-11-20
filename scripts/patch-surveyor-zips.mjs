@@ -40,57 +40,44 @@ addBaseBankAssets(put, putJson)
 // Multi-pack controller functions and tags
 put(
   'data/builder_tables/function/controller/open_catalog.mcfunction',
-  '# Abrir catálogo único o selector de paquetes\n' +
+  '# Abrir catalogo directamente en la interfaz GUI (sin chat)\n' +
     'scoreboard players set #installed_packs bt_pack_count 0\n' +
     'function #builder_tables:menu/register_pack\n' +
-    'execute if score #installed_packs bt_pack_count matches 1 run function #builder_tables:menu/open_single_pack\n' +
-    'execute if score #installed_packs bt_pack_count matches 2.. run function builder_tables:controller/show_pack_selector\n' +
+    'execute unless score #active_pack bt_pack_index matches 1.. run scoreboard players set #active_pack bt_pack_index 1\n' +
+    'execute if score #active_pack bt_pack_index > #installed_packs bt_pack_count run scoreboard players set #active_pack bt_pack_index 1\n' +
+    'function #builder_tables:menu/open_pack_by_index\n' +
     'execute if score #installed_packs bt_pack_count matches ..0 run dialog show @s builder_tables:catalogo\n',
 )
 put(
-  'data/builder_tables/function/controller/show_pack_selector.mcfunction',
-  'tellraw @s ["",{"text":"═══════════════════════════════════════","color":"gold","strikethrough":true}]\n' +
-    'tellraw @s ["",{"text":" 📦 PAQUETES DE CONSTRUCCIÓN DISPONIBLES","color":"gold","bold":true}]\n' +
-    'tellraw @s ["",{"text":" Selecciona un paquete para abrir sus planos:","color":"gray"}]\n' +
-    'function #builder_tables:menu/show_pack_entry\n' +
-    'tellraw @s ["",{"text":"═══════════════════════════════════════","color":"gold","strikethrough":true}]\n',
+  'data/builder_tables/function/controller/next_pack.mcfunction',
+  '# Cambiar al siguiente paquete de planos desde la interfaz GUI\n' +
+    'scoreboard players add #active_pack bt_pack_index 1\n' +
+    'execute if score #active_pack bt_pack_index > #installed_packs bt_pack_count run scoreboard players set #active_pack bt_pack_index 1\n' +
+    'function #builder_tables:menu/open_pack_by_index\n' +
+    'execute if score #installed_packs bt_pack_count matches 1 run title @s actionbar {"text":"Solo hay 1 paquete de planos instalado","color":"yellow"}\n',
 )
 
 // Base pack menu files (allows opening default structures if other packs are present)
 put(
   'data/builder_tables/function/pack_base/menu/register.mcfunction',
-  '# Registrar presencia del paquete base\n' +
-    'scoreboard players add #installed_packs bt_pack_count 1\n',
+  '# Registrar presencia y asignar indice al paquete base\n' +
+    'scoreboard players add #installed_packs bt_pack_count 1\n' +
+    'scoreboard players operation #pack_base bt_pack_index = #installed_packs bt_pack_count\n',
 )
 put(
-  'data/builder_tables/function/pack_base/menu/open_if_only.mcfunction',
-  '# Si es el único paquete instalado, abrir catálogo base directamente\n' +
-    'execute if score #installed_packs bt_pack_count matches 1 run dialog show @s builder_tables:catalogo\n',
-)
-put(
-  'data/builder_tables/function/pack_base/menu/show_entry.mcfunction',
-  '# Entrada en selector para Construcciones Base\n' +
-    'tellraw @s ["",{"text":"  ▶ ","color":"gold","clickEvent":{"action":"run_command","value":"/trigger bt_open_pack set 1"},"hoverEvent":{"action":"show_text","contents":"Haz clic para abrir el catálogo base"}},{"text":"[Pack: ","color":"yellow","clickEvent":{"action":"run_command","value":"/trigger bt_open_pack set 1"},"hoverEvent":{"action":"show_text","contents":"Haz clic para abrir el catálogo base"}},{"text":"Construcciones Base","color":"aqua","bold":true,"clickEvent":{"action":"run_command","value":"/trigger bt_open_pack set 1"},"hoverEvent":{"action":"show_text","contents":"Haz clic para abrir el catálogo base"}},{"text":"] ","color":"yellow","clickEvent":{"action":"run_command","value":"/trigger bt_open_pack set 1"},"hoverEvent":{"action":"show_text","contents":"Haz clic para abrir el catálogo base"}},{"text":"(3 construcciones) ","color":"gray"},{"text":"[Abrir Catalogo]","color":"green","bold":true,"clickEvent":{"action":"run_command","value":"/trigger bt_open_pack set 1"},"hoverEvent":{"action":"show_text","contents":"Haz clic para abrir el catálogo base"}}]\n',
-)
-put(
-  'data/builder_tables/function/pack_base/menu/trigger.mcfunction',
-  '# Abrir catalogo base al recibir el trigger 1\n' +
-    'execute as @a[scores={bt_open_pack=1}] run dialog show @s builder_tables:catalogo\n',
+  'data/builder_tables/function/pack_base/menu/open_pack.mcfunction',
+  '# Abrir catalogo base si coincide con el indice activo\n' +
+    'execute if score #active_pack bt_pack_index = #pack_base bt_pack_index run dialog show @s builder_tables:catalogo\n',
 )
 
 putJson('data/builder_tables/tags/function/menu/register_pack.json', {
   values: ['builder_tables:pack_base/menu/register'],
 })
-putJson('data/builder_tables/tags/function/menu/open_single_pack.json', {
-  values: ['builder_tables:pack_base/menu/open_if_only'],
-})
-putJson('data/builder_tables/tags/function/menu/show_pack_entry.json', {
-  values: ['builder_tables:pack_base/menu/show_entry'],
+putJson('data/builder_tables/tags/function/menu/open_pack_by_index.json', {
+  values: ['builder_tables:pack_base/menu/open_pack'],
 })
 putJson('data/builder_tables/tags/function/menu/open_plan.json', { values: [] })
-putJson('data/builder_tables/tags/function/pack_triggers.json', {
-  values: ['builder_tables:pack_base/menu/trigger'],
-})
+putJson('data/builder_tables/tags/function/pack_triggers.json', { values: [] })
 putJson('data/builder_tables/tags/function/pack_recipes.json', { values: [] })
 
 console.log(`Generated ${Object.keys(files).length} base surveyor, bank & multi-pack files to inject.`)
@@ -119,7 +106,20 @@ for (const zipPath of targetZips) {
   const buffer = readFileSync(zipPath)
   const unzipped = unzipSync(new Uint8Array(buffer))
 
-  // Inject/replace all surveyor and bank files
+  // Clean up obsolete files
+  const obsoleteFiles = [
+    'data/builder_tables/function/controller/show_pack_selector.mcfunction',
+    'data/builder_tables/function/pack_base/menu/open_if_only.mcfunction',
+    'data/builder_tables/function/pack_base/menu/show_entry.mcfunction',
+    'data/builder_tables/function/pack_base/menu/trigger.mcfunction',
+    'data/builder_tables/tags/function/menu/open_single_pack.json',
+    'data/builder_tables/tags/function/menu/show_pack_entry.json',
+  ]
+  for (const obsolete of obsoleteFiles) {
+    delete unzipped[obsolete]
+  }
+
+  // Inject/replace all surveyor, bank & multi-pack base files
   for (const [filePath, content] of Object.entries(files)) {
     unzipped[filePath] = content
   }
@@ -156,7 +156,7 @@ for (const zipPath of targetZips) {
     }
   }
 
-  // Ensure data/builder_tables/function/init.mcfunction initializes bank objectives if present
+  // Ensure data/builder_tables/function/init.mcfunction initializes bank and multi-pack objectives
   if (unzipped['data/builder_tables/function/init.mcfunction']) {
     try {
       let initCode = new TextDecoder().decode(unzipped['data/builder_tables/function/init.mcfunction'])
@@ -183,21 +183,25 @@ for (const zipPath of targetZips) {
           'scoreboard players set #nine bt_price 9\n' +
           'recipe give @a builder_tables:bank_card\n' +
           'advancement revoke @a only builder_tables_generated:used_bank_card\n'
-        unzipped['data/builder_tables/function/init.mcfunction'] = strToU8(initCode)
-      } else {
-        // Actualizar constantes si ya existía el bloque con la versión anterior de 250
-        initCode = initCode.replace(
-          'scoreboard players set #hundred bt_interest_math 100\nscoreboard players set #cap bt_interest_math 250',
-          'scoreboard players set #ten bt_interest_math 10\nscoreboard players set #hundred bt_interest_math 100\nscoreboard players set #tier1_limit bt_interest_math 25000\nscoreboard players set #tier1_max bt_interest_math 2500\nscoreboard players set #cap bt_interest_math 5000'
-        )
-        unzipped['data/builder_tables/function/init.mcfunction'] = strToU8(initCode)
       }
+
+      if (!initCode.includes('scoreboard objectives add bt_pack_count dummy')) {
+        initCode += '\nscoreboard objectives add bt_pack_count dummy\n'
+      }
+      if (!initCode.includes('scoreboard objectives add bt_pack_index dummy')) {
+        initCode += 'scoreboard objectives add bt_pack_index dummy\n'
+      }
+      if (!initCode.includes('scoreboard objectives add bt_next_pack trigger')) {
+        initCode += 'scoreboard objectives add bt_next_pack trigger\n'
+      }
+
+      unzipped['data/builder_tables/function/init.mcfunction'] = strToU8(initCode)
     } catch (e) {
       console.error(`Error updating init.mcfunction in ${zipPath}:`, e)
     }
   }
 
-  // Ensure data/builder_tables/function/tick.mcfunction has bank triggers enabled
+  // Ensure data/builder_tables/function/tick.mcfunction has bank triggers & bt_next_pack enabled
   if (unzipped['data/builder_tables/function/tick.mcfunction']) {
     try {
       let tickCode = new TextDecoder().decode(unzipped['data/builder_tables/function/tick.mcfunction'])
@@ -220,7 +224,18 @@ for (const zipPath of targetZips) {
           'scoreboard players reset @a[scores={bt_balance=1..}] bt_balance\n' +
           'execute as @a[scores={bt_bank_menu=1..}] run function builder_tables_generated:bank/open\n' +
           'scoreboard players reset @a[scores={bt_bank_menu=1..}] bt_bank_menu\n'
-        unzipped['data/builder_tables/function/tick.mcfunction'] = strToU8(tickCode)
+      }
+
+      // Remove obsolete bt_open_pack lines if present
+      tickCode = tickCode.replace(/scoreboard players enable @a bt_open_pack\r?\n?/g, '')
+      tickCode = tickCode.replace(/scoreboard players reset @a\[scores=\{bt_open_pack=1\.\.\}\] bt_open_pack\r?\n?/g, '')
+
+      if (!tickCode.includes('scoreboard players enable @a bt_next_pack')) {
+        tickCode +=
+          '\n# Cambio de paquete en interfaz grafica\n' +
+          'scoreboard players enable @a bt_next_pack\n' +
+          'execute as @a[scores={bt_next_pack=1..}] run function builder_tables:controller/next_pack\n' +
+          'scoreboard players reset @a[scores={bt_next_pack=1..}] bt_next_pack\n'
       }
 
       if (!tickCode.includes('function #builder_tables:pack_triggers')) {
@@ -228,42 +243,10 @@ for (const zipPath of targetZips) {
           'function builder_tables:dynamic_triggers',
           'function #builder_tables:pack_triggers\nfunction builder_tables:dynamic_triggers',
         )
-        unzipped['data/builder_tables/function/tick.mcfunction'] = strToU8(tickCode)
       }
+      unzipped['data/builder_tables/function/tick.mcfunction'] = strToU8(tickCode)
     } catch (e) {
       console.error(`Error updating tick.mcfunction in ${zipPath}:`, e)
-    }
-  }
-
-  // Ensure data/builder_tables/function/init.mcfunction has bt_pack_count and bt_open_pack objectives
-  if (unzipped['data/builder_tables/function/init.mcfunction']) {
-    try {
-      let initCode = new TextDecoder().decode(unzipped['data/builder_tables/function/init.mcfunction'])
-      if (!initCode.includes('scoreboard objectives add bt_pack_count dummy')) {
-        initCode += '\nscoreboard objectives add bt_pack_count dummy\n'
-      }
-      if (!initCode.includes('scoreboard objectives add bt_open_pack trigger')) {
-        initCode += '\nscoreboard objectives add bt_open_pack trigger\n'
-      }
-      unzipped['data/builder_tables/function/init.mcfunction'] = strToU8(initCode)
-    } catch (e) {
-      console.error(`Error adding objectives in ${zipPath}:`, e)
-    }
-  }
-
-  // Ensure data/builder_tables/function/tick.mcfunction has bt_open_pack enabled and reset
-  if (unzipped['data/builder_tables/function/tick.mcfunction']) {
-    try {
-      let tickCode = new TextDecoder().decode(unzipped['data/builder_tables/function/tick.mcfunction'])
-      if (!tickCode.includes('scoreboard players enable @a bt_open_pack')) {
-        tickCode +=
-          '\n# Selector de paquetes por trigger\n' +
-          'scoreboard players enable @a bt_open_pack\n' +
-          'scoreboard players reset @a[scores={bt_open_pack=1..}] bt_open_pack\n'
-        unzipped['data/builder_tables/function/tick.mcfunction'] = strToU8(tickCode)
-      }
-    } catch (e) {
-      console.error(`Error updating bt_open_pack in tick.mcfunction in ${zipPath}:`, e)
     }
   }
 
@@ -283,36 +266,68 @@ for (const zipPath of targetZips) {
     }
   }
 
-  // If this zip is a generated pack with a pack_<id>/menu/show_entry.mcfunction, fix its clickEvent
+  // Update all dialog/catalogo*.json files to have the [➔ Cambiar Paquete] button
+  for (const dialogPath of Object.keys(unzipped)) {
+    if (dialogPath.startsWith('data/builder_tables/dialog/catalogo') && dialogPath.endsWith('.json')) {
+      try {
+        const dialogJson = JSON.parse(new TextDecoder().decode(unzipped[dialogPath]))
+        if (Array.isArray(dialogJson.actions)) {
+          const hasChangePack = dialogJson.actions.some(
+            (a) => a.action?.command === 'trigger bt_next_pack set 1',
+          )
+          if (!hasChangePack) {
+            dialogJson.actions.push({
+              label: { text: '➔ Cambiar Paquete', color: 'gold' },
+              action: { type: 'run_command', command: 'trigger bt_next_pack set 1' },
+              tooltip: { text: 'Ver planos de otros paquetes de construcción instalados' },
+            })
+            unzipped[dialogPath] = strToU8(JSON.stringify(dialogJson, null, 2) + '\n')
+          }
+        }
+      } catch (e) {
+        console.error(`Error updating catalog dialog in ${zipPath}:`, e)
+      }
+    }
+  }
+
+  // If this zip is a generated pack with a pack_<id>, update its files
   for (const entryPath of Object.keys(unzipped)) {
-    const match = entryPath.match(/^data\/builder_tables\/function\/pack_([^/]+)\/menu\/show_entry\.mcfunction$/)
+    const match = entryPath.match(/^data\/builder_tables\/function\/pack_([^/]+)\/menu\/register\.mcfunction$/)
     if (match) {
       const packId = match[1]
       if (packId === 'base') continue
-      const packNum = packIdNumber(packId)
-      let showEntryCode = new TextDecoder().decode(unzipped[entryPath])
-      if (showEntryCode.includes('/dialog show @s')) {
-        showEntryCode = showEntryCode.replaceAll(
-          `/dialog show @s builder_tables:catalogo_${packId}`,
-          `/trigger bt_open_pack set ${packNum}`,
-        )
-        unzipped[entryPath] = strToU8(showEntryCode)
-      }
-      unzipped[`data/builder_tables/function/pack_${packId}/menu/trigger.mcfunction`] = strToU8(
-        `# Abrir catalogo del paquete al recibir el trigger del selector\nexecute as @a[scores={bt_open_pack=${packNum}}] run dialog show @s builder_tables:catalogo_${packId}\n`,
+
+      // Update register to assign index
+      unzipped[`data/builder_tables/function/pack_${packId}/menu/register.mcfunction`] = strToU8(
+        `# Registrar presencia y asignar indice al paquete ${packId}\n` +
+          `scoreboard players add #installed_packs bt_pack_count 1\n` +
+          `scoreboard players operation #pack_${packId} bt_pack_index = #installed_packs bt_pack_count\n`,
       )
-      const packTriggersPath = 'data/builder_tables/tags/function/pack_triggers.json'
-      let triggersList = []
-      if (unzipped[packTriggersPath]) {
+
+      // Add open_pack
+      unzipped[`data/builder_tables/function/pack_${packId}/menu/open_pack.mcfunction`] = strToU8(
+        `# Abrir catalogo si este paquete es el seleccionado\n` +
+          `execute if score #active_pack bt_pack_index = #pack_${packId} bt_pack_index run dialog show @s builder_tables:catalogo_${packId}\n`,
+      )
+
+      // Remove obsolete files for this pack
+      delete unzipped[`data/builder_tables/function/pack_${packId}/menu/show_entry.mcfunction`]
+      delete unzipped[`data/builder_tables/function/pack_${packId}/menu/open_if_only.mcfunction`]
+      delete unzipped[`data/builder_tables/function/pack_${packId}/menu/trigger.mcfunction`]
+
+      // Ensure open_pack_by_index tag includes this pack
+      const openTagPath = 'data/builder_tables/tags/function/menu/open_pack_by_index.json'
+      let openTagList = []
+      if (unzipped[openTagPath]) {
         try {
-          triggersList = JSON.parse(new TextDecoder().decode(unzipped[packTriggersPath])).values || []
+          openTagList = JSON.parse(new TextDecoder().decode(unzipped[openTagPath])).values || []
         } catch {}
       }
-      const triggerFn = `builder_tables:pack_${packId}/menu/trigger`
-      if (!triggersList.includes(triggerFn)) {
-        triggersList.push(triggerFn)
+      const packOpenFn = `builder_tables:pack_${packId}/menu/open_pack`
+      if (!openTagList.includes(packOpenFn)) {
+        openTagList.push(packOpenFn)
       }
-      unzipped[packTriggersPath] = strToU8(JSON.stringify({ values: triggersList }, null, 2) + '\n')
+      unzipped[openTagPath] = strToU8(JSON.stringify({ values: openTagList }, null, 2) + '\n')
     }
   }
 
