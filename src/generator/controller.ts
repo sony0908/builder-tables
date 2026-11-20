@@ -24,6 +24,14 @@ export function structurePlanId(id: string): number {
   return (Math.abs(hash) % 1999999000) + 1
 }
 
+export function packIdNumber(id: string): number {
+  let hash = 5381
+  for (let i = 0; i < id.length; i++) {
+    hash = ((hash << 5) + hash + id.charCodeAt(i)) | 0
+  }
+  return (Math.abs(hash) % 1999999000) + 1
+}
+
 function mcfunction(lines: string[]) {
   return lines.join('\n') + '\n'
 }
@@ -359,6 +367,7 @@ const BANK_TRIGGER_OBJECTIVES = [
         )
         .concat([
           'scoreboard objectives add bt_pack_count dummy',
+          'scoreboard objectives add bt_open_pack trigger',
           'scoreboard players set #ten bt_interest_math 10',
           'scoreboard players set #hundred bt_interest_math 100',
           'scoreboard players set #tier1_limit bt_interest_math 25000',
@@ -537,6 +546,7 @@ function addPackMenuHooks(
   packMeta: PackMeta,
 ) {
   const packRoot = 'data/builder_tables/function/pack_' + packMeta.id + '/menu/'
+  const packNum = packIdNumber(packMeta.id)
 
   // 1. Registro de presencia del paquete
   put(
@@ -554,27 +564,49 @@ function addPackMenuHooks(
       '\n',
   )
 
-  // 3. Entrada en el chat para el selector de paquetes
-  const countText = structures.length + (structures.length === 1 ? ' construccion' : ' construcciones')
+  // 3. Entrada en el chat para el selector de paquetes (funciona en Survival mediante /trigger)
+  const countText =
+    structures.length + (structures.length === 1 ? ' construccion' : ' construcciones')
+  const openCmd = '/trigger bt_open_pack set ' + packNum
+  const hoverMsg = 'Haz clic para abrir el catálogo de ' + packMeta.name
+
   const chatEntry = JSON.stringify([
     '',
-    { text: '  ▶ ', color: 'gold' },
-    { text: '[Pack: ', color: 'yellow' },
-    { text: packMeta.name, color: 'aqua', bold: true },
-    { text: '] ', color: 'yellow' },
-    { text: '(' + countText + ') ', color: 'gray' },
+    {
+      text: '  ▶ ',
+      color: 'gold',
+      clickEvent: { action: 'run_command', value: openCmd },
+      hoverEvent: { action: 'show_text', contents: hoverMsg },
+    },
+    {
+      text: '[Pack: ',
+      color: 'yellow',
+      clickEvent: { action: 'run_command', value: openCmd },
+      hoverEvent: { action: 'show_text', contents: hoverMsg },
+    },
+    {
+      text: packMeta.name,
+      color: 'aqua',
+      bold: true,
+      clickEvent: { action: 'run_command', value: openCmd },
+      hoverEvent: { action: 'show_text', contents: hoverMsg },
+    },
+    {
+      text: '] ',
+      color: 'yellow',
+      clickEvent: { action: 'run_command', value: openCmd },
+      hoverEvent: { action: 'show_text', contents: hoverMsg },
+    },
+    {
+      text: '(' + countText + ') ',
+      color: 'gray',
+    },
     {
       text: '[Abrir Catalogo]',
       color: 'green',
       bold: true,
-      clickEvent: {
-        action: 'run_command',
-        value: '/dialog show @s builder_tables:catalogo_' + packMeta.id,
-      },
-      hoverEvent: {
-        action: 'show_text',
-        value: 'Haz clic para abrir el catalogo de ' + packMeta.name,
-      },
+      clickEvent: { action: 'run_command', value: openCmd },
+      hoverEvent: { action: 'show_text', contents: hoverMsg },
     },
   ])
 
@@ -584,7 +616,18 @@ function addPackMenuHooks(
       'tellraw @s ' + chatEntry + '\n',
   )
 
-  // 4. Abrir plano activo si pertenece a este paquete
+  // 4. Trigger de apertura de diálogo cuando el jugador hace clic en el chat
+  put(
+    packRoot + 'trigger.mcfunction',
+    '# Abrir catalogo del paquete al recibir el trigger del selector\n' +
+      'execute as @a[scores={bt_open_pack=' +
+      packNum +
+      '}] run dialog show @s builder_tables:catalogo_' +
+      packMeta.id +
+      '\n',
+  )
+
+  // 5. Abrir plano activo si pertenece a este paquete
   const openPlanLines = [
     '# Abrir plano activo si pertenece a este paquete',
     ...structures.map(

@@ -5,6 +5,7 @@ import { unzipSync, zipSync, strToU8 } from 'fflate'
 // Import surveyor and bank modules
 import { addSurveyorAssets } from '../src/generator/surveyor.ts'
 import { addBaseBankAssets } from '../src/generator/bank.ts'
+import { packIdNumber } from '../src/generator/controller.ts'
 
 const files = {}
 const put = (path, content) => {
@@ -55,11 +56,41 @@ put(
     'tellraw @s ["",{"text":"═══════════════════════════════════════","color":"gold","strikethrough":true}]\n',
 )
 
-putJson('data/builder_tables/tags/function/menu/register_pack.json', { values: [] })
-putJson('data/builder_tables/tags/function/menu/open_single_pack.json', { values: [] })
-putJson('data/builder_tables/tags/function/menu/show_pack_entry.json', { values: [] })
+// Base pack menu files (allows opening default structures if other packs are present)
+put(
+  'data/builder_tables/function/pack_base/menu/register.mcfunction',
+  '# Registrar presencia del paquete base\n' +
+    'scoreboard players add #installed_packs bt_pack_count 1\n',
+)
+put(
+  'data/builder_tables/function/pack_base/menu/open_if_only.mcfunction',
+  '# Si es el único paquete instalado, abrir catálogo base directamente\n' +
+    'execute if score #installed_packs bt_pack_count matches 1 run dialog show @s builder_tables:catalogo\n',
+)
+put(
+  'data/builder_tables/function/pack_base/menu/show_entry.mcfunction',
+  '# Entrada en selector para Construcciones Base\n' +
+    'tellraw @s ["",{"text":"  ▶ ","color":"gold","clickEvent":{"action":"run_command","value":"/trigger bt_open_pack set 1"},"hoverEvent":{"action":"show_text","contents":"Haz clic para abrir el catálogo base"}},{"text":"[Pack: ","color":"yellow","clickEvent":{"action":"run_command","value":"/trigger bt_open_pack set 1"},"hoverEvent":{"action":"show_text","contents":"Haz clic para abrir el catálogo base"}},{"text":"Construcciones Base","color":"aqua","bold":true,"clickEvent":{"action":"run_command","value":"/trigger bt_open_pack set 1"},"hoverEvent":{"action":"show_text","contents":"Haz clic para abrir el catálogo base"}},{"text":"] ","color":"yellow","clickEvent":{"action":"run_command","value":"/trigger bt_open_pack set 1"},"hoverEvent":{"action":"show_text","contents":"Haz clic para abrir el catálogo base"}},{"text":"(3 construcciones) ","color":"gray"},{"text":"[Abrir Catalogo]","color":"green","bold":true,"clickEvent":{"action":"run_command","value":"/trigger bt_open_pack set 1"},"hoverEvent":{"action":"show_text","contents":"Haz clic para abrir el catálogo base"}}]\n',
+)
+put(
+  'data/builder_tables/function/pack_base/menu/trigger.mcfunction',
+  '# Abrir catalogo base al recibir el trigger 1\n' +
+    'execute as @a[scores={bt_open_pack=1}] run dialog show @s builder_tables:catalogo\n',
+)
+
+putJson('data/builder_tables/tags/function/menu/register_pack.json', {
+  values: ['builder_tables:pack_base/menu/register'],
+})
+putJson('data/builder_tables/tags/function/menu/open_single_pack.json', {
+  values: ['builder_tables:pack_base/menu/open_if_only'],
+})
+putJson('data/builder_tables/tags/function/menu/show_pack_entry.json', {
+  values: ['builder_tables:pack_base/menu/show_entry'],
+})
 putJson('data/builder_tables/tags/function/menu/open_plan.json', { values: [] })
-putJson('data/builder_tables/tags/function/pack_triggers.json', { values: [] })
+putJson('data/builder_tables/tags/function/pack_triggers.json', {
+  values: ['builder_tables:pack_base/menu/trigger'],
+})
 putJson('data/builder_tables/tags/function/pack_recipes.json', { values: [] })
 
 console.log(`Generated ${Object.keys(files).length} base surveyor, bank & multi-pack files to inject.`)
@@ -73,6 +104,10 @@ const targetZips = [
   'public/downloads/BuilderTables_26.3_controller_menu_v2.zip',
   'C:/Users/erick/AppData/Roaming/.minecraft/saves/mundo construcciones/datapacks/BuilderTables_26.2_controller_menu_v2.zip',
   'C:/Users/erick/AppData/Roaming/.minecraft/saves/mundo construcciones/datapacks/BuilderTables_26.2_generated (3).zip',
+  'C:/Users/erick/Downloads/BuilderTables_26.2_controller_menu_v2 (3).zip',
+  'C:/Users/erick/Downloads/BuilderTables_26.2_controller_menu_v2.zip',
+  'C:/Users/erick/Downloads/BuilderTables_26.2_zombificador.zip',
+  'C:/Users/erick/Downloads/BuilderTables_26.2_pack_b56at.zip',
 ]
 
 for (const zipPath of targetZips) {
@@ -200,16 +235,35 @@ for (const zipPath of targetZips) {
     }
   }
 
-  // Ensure data/builder_tables/function/init.mcfunction has bt_pack_count objective
+  // Ensure data/builder_tables/function/init.mcfunction has bt_pack_count and bt_open_pack objectives
   if (unzipped['data/builder_tables/function/init.mcfunction']) {
     try {
       let initCode = new TextDecoder().decode(unzipped['data/builder_tables/function/init.mcfunction'])
       if (!initCode.includes('scoreboard objectives add bt_pack_count dummy')) {
         initCode += '\nscoreboard objectives add bt_pack_count dummy\n'
-        unzipped['data/builder_tables/function/init.mcfunction'] = strToU8(initCode)
+      }
+      if (!initCode.includes('scoreboard objectives add bt_open_pack trigger')) {
+        initCode += '\nscoreboard objectives add bt_open_pack trigger\n'
+      }
+      unzipped['data/builder_tables/function/init.mcfunction'] = strToU8(initCode)
+    } catch (e) {
+      console.error(`Error adding objectives in ${zipPath}:`, e)
+    }
+  }
+
+  // Ensure data/builder_tables/function/tick.mcfunction has bt_open_pack enabled and reset
+  if (unzipped['data/builder_tables/function/tick.mcfunction']) {
+    try {
+      let tickCode = new TextDecoder().decode(unzipped['data/builder_tables/function/tick.mcfunction'])
+      if (!tickCode.includes('scoreboard players enable @a bt_open_pack')) {
+        tickCode +=
+          '\n# Selector de paquetes por trigger\n' +
+          'scoreboard players enable @a bt_open_pack\n' +
+          'scoreboard players reset @a[scores={bt_open_pack=1..}] bt_open_pack\n'
+        unzipped['data/builder_tables/function/tick.mcfunction'] = strToU8(tickCode)
       }
     } catch (e) {
-      console.error(`Error adding bt_pack_count in ${zipPath}:`, e)
+      console.error(`Error updating bt_open_pack in tick.mcfunction in ${zipPath}:`, e)
     }
   }
 
@@ -226,6 +280,39 @@ for (const zipPath of targetZips) {
       }
     } catch (e) {
       console.error(`Error updating open.mcfunction in ${zipPath}:`, e)
+    }
+  }
+
+  // If this zip is a generated pack with a pack_<id>/menu/show_entry.mcfunction, fix its clickEvent
+  for (const entryPath of Object.keys(unzipped)) {
+    const match = entryPath.match(/^data\/builder_tables\/function\/pack_([^/]+)\/menu\/show_entry\.mcfunction$/)
+    if (match) {
+      const packId = match[1]
+      if (packId === 'base') continue
+      const packNum = packIdNumber(packId)
+      let showEntryCode = new TextDecoder().decode(unzipped[entryPath])
+      if (showEntryCode.includes('/dialog show @s')) {
+        showEntryCode = showEntryCode.replaceAll(
+          `/dialog show @s builder_tables:catalogo_${packId}`,
+          `/trigger bt_open_pack set ${packNum}`,
+        )
+        unzipped[entryPath] = strToU8(showEntryCode)
+      }
+      unzipped[`data/builder_tables/function/pack_${packId}/menu/trigger.mcfunction`] = strToU8(
+        `# Abrir catalogo del paquete al recibir el trigger del selector\nexecute as @a[scores={bt_open_pack=${packNum}}] run dialog show @s builder_tables:catalogo_${packId}\n`,
+      )
+      const packTriggersPath = 'data/builder_tables/tags/function/pack_triggers.json'
+      let triggersList = []
+      if (unzipped[packTriggersPath]) {
+        try {
+          triggersList = JSON.parse(new TextDecoder().decode(unzipped[packTriggersPath])).values || []
+        } catch {}
+      }
+      const triggerFn = `builder_tables:pack_${packId}/menu/trigger`
+      if (!triggersList.includes(triggerFn)) {
+        triggersList.push(triggerFn)
+      }
+      unzipped[packTriggersPath] = strToU8(JSON.stringify({ values: triggersList }, null, 2) + '\n')
     }
   }
 
